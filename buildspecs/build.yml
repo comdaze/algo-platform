@@ -1,0 +1,29 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+      nodejs: 18
+    commands:
+      - npm install
+      - pip install -r ml_pipeline/requirements.txt
+  pre_build:
+    commands:
+      - echo "Running tests..."
+      - npm test
+  build:
+    commands:
+      - echo "Building infrastructure..."
+      - cd infrastructure && npm run build
+      - echo "Building frontend..."
+      - cd ../frontend && npm run build
+  post_build:
+    commands:
+      - echo "Build completed on $(date)"
+
+artifacts:
+  files:
+    - infrastructure/cdk.out/**/*
+    - frontend/dist/**/*
+  discard-paths: no

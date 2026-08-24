@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# CDK
+cdk.out/
+
+# Build output
+dist/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# CDK compiled JS (keep dist/ JS)
+infrastructure/**/*.js
+infrastructure/**/*.d.ts
+infrastructure/**/*.js.map
+!infrastructure/jest.config.js
+lambdas/**/*.js
+lambdas/**/*.d.ts
+lambdas/**/*.js.map
+
+# Environment
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/

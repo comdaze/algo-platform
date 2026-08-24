@@ -1,0 +1,18 @@
+{
+  "name": "goldwind-lambda-metadata-crud",
+  "version": "1.0.0",
+  "description": "Lambda function for algorithm metadata CRUD operations",
+  "private": true,
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.4.0",
+    "@types/node": "^20.0.0",
+    "@types/aws-lambda": "^8.10.0"
+  }
+}

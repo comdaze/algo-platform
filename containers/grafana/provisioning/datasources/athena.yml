@@ -1,0 +1,13 @@
+apiVersion: 1
+datasources:
+  - name: Athena
+    type: grafana-athena-datasource
+    access: proxy
+    isDefault: true
+    jsonData:
+      defaultRegion: cn-northwest-1
+      catalog: AwsDataCatalog
+      database: goldwind_metrics
+      workgroup: primary
+      outputLocation: s3://goldwind-athena-results/
+    editable: true

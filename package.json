@@ -1,0 +1,19 @@
+{
+  "name": "goldwind-algo-platform",
+  "version": "1.0.0",
+  "description": "金风天润算法平台 - Goldwind Tianrun Algorithm Platform",
+  "private": true,
+  "workspaces": [
+    "infrastructure",
+    "frontend",
+    "lambdas/metadata-crud",
+    "lambdas/rollback",
+    "lambdas/callback-handler",
+    "lambdas/api-handler",
+    "lambdas/backtesting"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  }
+}

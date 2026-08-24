@@ -1,0 +1,29 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: cn-northwest-1
+    PIP_INDEX_URL: https://pypi.tuna.tsinghua.edu.cn/simple
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+      nodejs: 18
+    commands:
+      - pip install -r ml_pipeline/requirements.txt
+  pre_build:
+    commands:
+      - echo "Validating pipeline definition..."
+      - python3 -c "import ast; ast.parse(open('ml_pipeline/pipeline.py').read())"
+  build:
+    commands:
+      - echo "Creating/Updating SageMaker Pipeline..."
+      - python ml_pipeline/run_pipeline.py
+  post_build:
+    commands:
+      - echo "Pipeline execution triggered on $(date)"
+
+artifacts:
+  files:
+    - ml_pipeline/**/*
