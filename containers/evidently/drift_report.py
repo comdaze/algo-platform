@@ -1,5 +1,5 @@
 """
-Evidently drift report generator for Goldwind Algorithm Platform.
+Evidently drift report generator for Algorithm Platform.
 Reads reference and current data from S3, generates drift reports,
 and uploads results back to S3.
 """

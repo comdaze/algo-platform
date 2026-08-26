@@ -23,11 +23,11 @@ export class AlertingConstruct extends Construct {
 
     // SNS Topics
     this.modelAlertsTopic = new sns.Topic(this, 'ModelAlertsTopic', {
-      topicName: 'goldwind-model-alerts',
+      topicName: 'algo-model-alerts',
     });
 
     this.driftAlertsTopic = new sns.Topic(this, 'DriftAlertsTopic', {
-      topicName: 'goldwind-drift-alerts',
+      topicName: 'algo-drift-alerts',
     });
 
     // Lambda: alert-evaluator

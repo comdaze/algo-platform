@@ -1,6 +1,6 @@
 {
-  "projectName": "goldwind-algo-platform",
+  "projectName": "algo-platform",
   "region": "cn-northwest-1",
   "repoType": "codecommit",
-  "modelEndpointExportNamePrefix": "GoldwindModelEndpoint"
+  "modelEndpointExportNamePrefix": "AlgoModelEndpoint"
 }

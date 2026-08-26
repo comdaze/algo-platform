@@ -1,0 +1,54 @@
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # ALB health check.
+    location = /healthz {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 'ok';
+    }
+
+    # Reverse-proxy /api/* to the PRIVATE API Gateway (reachable only in-VPC via
+    # the interface endpoint's private DNS). Strip /api -> map to the /prod stage.
+    # ${API_HOST} is injected by the nginx entrypoint envsubst at container start.
+    location /api/ {
+        proxy_ssl_server_name on;
+        proxy_set_header Host ${API_HOST};
+        rewrite ^/api/(.*)$ /prod/$1 break;
+        proxy_pass https://${API_HOST};
+    }
+
+    # Reverse-proxy /grafana/* to the INTERNAL Grafana ALB (in-VPC only).
+    # Grafana is configured with serve_from_sub_path + root_url=/grafana and
+    # allow_embedding=true, so the full /grafana/ path is passed through
+    # unchanged and the UI is iframe-embeddable (same origin as the SPA).
+    # ${GRAFANA_HOST} = internal ALB DNS (listens on :80), injected via envsubst.
+    location /grafana/ {
+        proxy_pass http://${GRAFANA_HOST};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $http_connection;
+    }
+
+    # Reverse-proxy /mlflow/* to the INTERNAL MLflow NLB (in-VPC only).
+    # MLflow is started with `--static-prefix /mlflow`, so the full /mlflow/
+    # path (UI, static assets, and /mlflow/ajax-api/*) is passed through
+    # unchanged. ${MLFLOW_HOST} = internal NLB DNS + :5000, injected via envsubst.
+    location /mlflow/ {
+        proxy_pass http://${MLFLOW_HOST};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # SPA client-side routing fallback.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

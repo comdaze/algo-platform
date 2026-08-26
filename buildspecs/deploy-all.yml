@@ -1,0 +1,33 @@
+version: 0.2
+
+# Standalone one-shot deployer: builds the container image assets (MLflow /
+# Grafana / Evidently) inside CodeBuild (privileged mode = Docker) and deploys
+# all CDK stacks to cn-northwest-1. Run by the algo-platform-codebuild-deployer
+# CodeBuild project.
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: cn-northwest-1
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - node -v && npm -v && docker -v
+      - npm config set registry https://registry.npmmirror.com
+      # Drop the lockfile so npm resolves versions the mirror actually hosts.
+      # (npmmirror can lag on fast-moving pins like electron-to-chromium.)
+      - rm -f package-lock.json
+      - npm install
+  build:
+    commands:
+      - echo "Building frontend (produces frontend/dist for the Frontend stack)..."
+      - (cd frontend && npm run build)
+      - echo "Compiling infrastructure..."
+      - (cd infrastructure && npm run build)
+      - echo "Deploying all stacks to $AWS_DEFAULT_REGION ..."
+      - (cd infrastructure && npx cdk deploy --all --require-approval never --concurrency 2)
+  post_build:
+    commands:
+      - echo "Deploy finished on $(date)"

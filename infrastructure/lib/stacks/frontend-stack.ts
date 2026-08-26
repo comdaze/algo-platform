@@ -1,38 +1,55 @@
 import { Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import { FrontendHostingConstruct } from '../constructs/frontend-hosting-construct';
+import { FrontendServiceConstruct } from '../constructs/frontend-service-construct';
 import { ApiGatewayConstruct } from '../constructs/api-gateway-construct';
 
 export interface FrontendStackProps extends StackProps {
+  readonly vpc: ec2.IVpc;
   readonly metadataTable: dynamodb.ITable;
   readonly deploymentHistoryTable: dynamodb.ITable;
   readonly sageMakerExecutionRole: iam.IRole;
   readonly backtestStateMachineArn: string;
+  readonly rollbackFunctionArn: string;
+  readonly grafanaHost: string;
+  readonly mlflowHost: string;
 }
 
 export class FrontendStack extends Stack {
   constructor(scope: Construct, id: string, props: FrontendStackProps) {
     super(scope, id, props);
 
-    const frontendHosting = new FrontendHostingConstruct(this, 'FrontendHosting');
-
     const apiGateway = new ApiGatewayConstruct(this, 'ApiGateway', {
+      vpc: props.vpc,
       metadataTable: props.metadataTable,
       deploymentHistoryTable: props.deploymentHistoryTable,
       sageMakerExecutionRole: props.sageMakerExecutionRole,
       backtestStateMachineArn: props.backtestStateMachineArn,
+      rollbackFunctionArn: props.rollbackFunctionArn,
     });
 
-    new CfnOutput(this, 'CloudFrontUrl', {
-      value: `https://${frontendHosting.distributionDomainName}`,
-      description: 'CloudFront distribution URL for the frontend',
+    const frontendService = new FrontendServiceConstruct(this, 'FrontendService', {
+      vpc: props.vpc,
+      apiHost: apiGateway.apiHost,
+      grafanaHost: props.grafanaHost,
+      mlflowHost: props.mlflowHost,
+    });
+
+    new CfnOutput(this, 'FrontendUrl', {
+      value: `http://${frontendService.loadBalancerDnsName}`,
+      description: 'Frontend ALB URL (reachable only from IPs in the allowlist prefix list); /api/* is proxied to the private API',
+    });
+
+    new CfnOutput(this, 'FrontendAllowlistPrefixListId', {
+      value: frontendService.allowlistPrefixListId,
+      description: 'Add your public IP CIDRs to this managed prefix list to grant access',
     });
 
     new CfnOutput(this, 'ApiGatewayUrl', {
       value: apiGateway.apiUrl,
-      description: 'API Gateway URL for the BFF API',
+      description: 'Private API Gateway invoke URL (reachable only in-VPC via the interface endpoint)',
     });
   }
 }

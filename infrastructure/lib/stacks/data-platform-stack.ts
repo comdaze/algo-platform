@@ -6,6 +6,7 @@ import { DataSourceConstruct } from '../constructs/data-source-construct';
 import { SageMakerConstruct } from '../constructs/sagemaker-construct';
 
 export class DataPlatformStack extends Stack {
+  readonly dataBucket: s3.Bucket;
   readonly dataManifestBucket: s3.Bucket;
   readonly sageMakerArtifactBucket: s3.Bucket;
   readonly sageMakerExecutionRole: iam.Role;
@@ -19,6 +20,7 @@ export class DataPlatformStack extends Stack {
       dataBucket: dataSource.dataBucket,
     });
 
+    this.dataBucket = dataSource.dataBucket;
     this.dataManifestBucket = dataSource.dataManifestBucket;
     this.sageMakerArtifactBucket = sageMaker.sagemakerArtifactBucket;
     this.sageMakerExecutionRole = sageMaker.sagemakerExecutionRole;

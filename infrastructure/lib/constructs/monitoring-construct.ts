@@ -29,12 +29,12 @@ export class MonitoringConstruct extends Construct {
     // ECS Cluster for monitoring services
     const cluster = new ecs.Cluster(this, 'MonitoringCluster', {
       vpc: props.vpc,
-      clusterName: 'goldwind-monitoring-cluster',
+      clusterName: 'algo-monitoring-cluster',
     });
 
     // Secrets Manager secret for Grafana admin password
     const grafanaAdminPassword = new secretsmanager.Secret(this, 'GrafanaAdminPassword', {
-      secretName: 'goldwind/grafana/admin-password',
+      secretName: 'algo/grafana/admin-password',
       generateSecretString: {
         excludePunctuation: true,
         passwordLength: 16,
@@ -51,7 +51,19 @@ export class MonitoringConstruct extends Construct {
       image: ecs.ContainerImage.fromAsset(path.join(__dirname, '../../../containers/grafana')),
       portMappings: [{ containerPort: 3000 }],
       environment: {
-        GF_SERVER_ROOT_URL: '/',
+        // Served behind the frontend nginx at /grafana/ (same origin as the SPA).
+        // serve_from_sub_path needs the PATH portion of root_url to be /grafana/;
+        // the domain is irrelevant for sub-path routing (the iframe is same-origin),
+        // so a literal localhost host is fine and avoids the invalid %(http_host)s
+        // variable (only %(protocol)s/%(domain)s/%(http_port)s are valid — an
+        // invalid var makes root_url unparseable and silently disables sub-path).
+        GF_SERVER_ROOT_URL: 'http://localhost:3000/grafana/',
+        GF_SERVER_SERVE_FROM_SUB_PATH: 'true',
+        // Allow the dashboards to be rendered inside the platform's <iframe>.
+        GF_SECURITY_ALLOW_EMBEDDING: 'true',
+        // Anonymous read-only access so the embedded panels render without a login.
+        GF_AUTH_ANONYMOUS_ENABLED: 'true',
+        GF_AUTH_ANONYMOUS_ORG_ROLE: 'Viewer',
       },
       secrets: {
         GF_SECURITY_ADMIN_PASSWORD: ecs.Secret.fromSecretsManager(grafanaAdminPassword),
@@ -103,9 +115,14 @@ export class MonitoringConstruct extends Construct {
 
     grafanaListener.addTargets('GrafanaTarget', {
       port: 3000,
+      protocol: elbv2.ApplicationProtocol.HTTP,
       targets: [this.grafanaService],
       healthCheck: {
-        path: '/api/health',
+        // With serve_from_sub_path, the health endpoint is under /grafana.
+        // Accept 200 OR 302 so a redirect can never stall the ECS rollout
+        // (a responding Grafana is healthy either way).
+        path: '/grafana/api/health',
+        healthyHttpCodes: '200,302',
         interval: cdk.Duration.seconds(30),
       },
     });

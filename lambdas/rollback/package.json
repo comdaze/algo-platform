@@ -1,5 +1,5 @@
 {
-  "name": "goldwind-lambda-rollback",
+  "name": "algo-lambda-rollback",
   "version": "1.0.0",
   "description": "Lambda function for model rollback operations",
   "private": true,

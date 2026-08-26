@@ -1,5 +1,5 @@
 #!/bin/bash
-# Goldwind Algorithm Platform - Deployment Script
+# Algorithm Platform - Deployment Script
 # Usage: ./scripts/deploy.sh [stack-name]
 
 set -euo pipefail

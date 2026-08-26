@@ -16,7 +16,7 @@ export class RollbackConstruct extends Construct {
 
     // DynamoDB table for deployment history
     this.deploymentHistoryTable = new dynamodb.Table(this, 'DeploymentHistoryTable', {
-      tableName: 'goldwind-deployment-history',
+      tableName: 'algo-deployment-history',
       partitionKey: { name: 'endpointName', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'deployedAt', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,

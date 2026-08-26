@@ -6,7 +6,8 @@ import {
   updateAlgorithm,
   deleteAlgorithm,
 } from './handlers/algorithms';
-import { listExecutions, getExecution, approveStep } from './handlers/workflows';
+import { listExecutions, getExecution, approveStep, startExecution } from './handlers/workflows';
+import { getPipelineGraph, updatePipelineGraph } from './handlers/pipelines';
 import {
   getMetrics,
   getDriftReport,
@@ -58,6 +59,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       case '/workflows':
         if (httpMethod === 'GET') {
           result = await listExecutions(params);
+        } else if (httpMethod === 'POST') {
+          result = await startExecution(parsedBody);
         } else {
           result = { statusCode: 405, body: JSON.stringify({ message: 'Method not allowed' }) };
         }
@@ -76,6 +79,17 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         if (httpMethod === 'POST') {
           const execId = pathParameters?.id || '';
           result = await approveStep(execId, parsedBody);
+        } else {
+          result = { statusCode: 405, body: JSON.stringify({ message: 'Method not allowed' }) };
+        }
+        break;
+
+      // Pipelines (graphical editor: GET current graph, PUT save edits -> UpdatePipeline)
+      case '/pipelines':
+        if (httpMethod === 'GET') {
+          result = await getPipelineGraph(params);
+        } else if (httpMethod === 'PUT') {
+          result = await updatePipelineGraph(parsedBody);
         } else {
           result = { statusCode: 405, body: JSON.stringify({ message: 'Method not allowed' }) };
         }

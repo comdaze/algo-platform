@@ -1,1 +1,1 @@
-"""Backtesting module for Goldwind Algorithm Platform."""
+"""Backtesting module for Algorithm Platform."""

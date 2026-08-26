@@ -16,7 +16,7 @@ const env: cdk.Environment = {
   account: process.env.CDK_DEFAULT_ACCOUNT || '123456789012',
 };
 
-const projectName = 'goldwind-algo-platform';
+const projectName = 'algo-platform';
 
 const foundationStack = new FoundationStack(app, 'FoundationStack', { env });
 
@@ -59,14 +59,20 @@ monitoringStack.addDependency(dataPlatformStack);
 
 const frontendStack = new FrontendStack(app, 'FrontendStack', {
   env,
+  vpc: foundationStack.vpc,
   metadataTable: metadataStack.metadataTable,
   deploymentHistoryTable: workflowStack.deploymentHistoryTable,
   sageMakerExecutionRole: dataPlatformStack.sageMakerExecutionRole,
   backtestStateMachineArn: monitoringStack.backtestStateMachineArn,
+  rollbackFunctionArn: workflowStack.rollbackFunctionArn,
+  grafanaHost: monitoringStack.grafanaHost,
+  mlflowHost: mlflowStack.mlflowHost,
 });
+frontendStack.addDependency(foundationStack);
 frontendStack.addDependency(metadataStack);
 frontendStack.addDependency(dataPlatformStack);
 frontendStack.addDependency(workflowStack);
 frontendStack.addDependency(monitoringStack);
+frontendStack.addDependency(mlflowStack);
 
 app.synth();

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from '@cloudscape-design/components/header';
 import Container from '@cloudscape-design/components/container';
 import SpaceBetween from '@cloudscape-design/components/space-between';
@@ -6,34 +6,48 @@ import Grid from '@cloudscape-design/components/grid';
 import Box from '@cloudscape-design/components/box';
 import Table from '@cloudscape-design/components/table';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
-import Link from '@cloudscape-design/components/link';
-import type { DriftFeature } from '../../types';
-
-// Mock drift data
-const mockDriftFeatures: DriftFeature[] = [
-  { featureName: 'wind_speed', drifted: true, pValue: 0.002, statistic: 0.45 },
-  { featureName: 'temperature', drifted: false, pValue: 0.15, statistic: 0.12 },
-  { featureName: 'humidity', drifted: true, pValue: 0.01, statistic: 0.38 },
-  { featureName: 'pressure', drifted: false, pValue: 0.42, statistic: 0.08 },
-  { featureName: 'direction', drifted: false, pValue: 0.22, statistic: 0.11 },
-  { featureName: 'turbulence', drifted: true, pValue: 0.005, statistic: 0.52 },
-  { featureName: 'power_output_lag_1', drifted: false, pValue: 0.35, statistic: 0.09 },
-  { featureName: 'power_output_lag_24', drifted: false, pValue: 0.61, statistic: 0.05 },
-];
+import Alert from '@cloudscape-design/components/alert';
+import { getDriftReport, type DriftReportView } from '../../api/monitoring';
 
 const DriftReportPage: React.FC = () => {
-  const featuresDrifted = mockDriftFeatures.filter((f) => f.drifted).length;
-  const totalFeatures = mockDriftFeatures.length;
-  const driftScore = 0.35;
-  const datasetDriftDetected = featuresDrifted > totalFeatures * 0.3;
+  const [report, setReport] = useState<DriftReportView | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    getDriftReport()
+      .then((r) => active && (setReport(r), setError(null)))
+      .catch((e) => active && setError(e?.message || 'Failed to load drift report'))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const features = report?.features ?? [];
+  const featuresDrifted = features.filter((f) => f.drifted).length;
+  const totalFeatures = features.length;
+  const driftScore = report?.driftScore ?? 0;
+  const datasetDriftDetected = driftScore > (report?.threshold ?? 0.1);
 
   return (
     <SpaceBetween size="l">
-      <Header variant="h1">Drift Report</Header>
+      <Header variant="h1" description={report?.timestamp ? `As of ${report.timestamp}` : undefined}>
+        Drift Report
+      </Header>
+      {error && (
+        <Alert type="error" header="Failed to load drift report" dismissible onDismiss={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
       <Grid gridDefinition={[{ colspan: 4 }, { colspan: 4 }, { colspan: 4 }]}>
         <Container>
           <Box variant="awsui-key-label">Features Drifted</Box>
-          <Box variant="h1">{featuresDrifted} / {totalFeatures}</Box>
+          <Box variant="h1">
+            {featuresDrifted} / {totalFeatures}
+          </Box>
         </Container>
         <Container>
           <Box variant="awsui-key-label">Drift Score</Box>
@@ -47,21 +61,10 @@ const DriftReportPage: React.FC = () => {
         </Container>
       </Grid>
 
-      <Container
-        header={
-          <Header
-            variant="h2"
-            actions={
-              <Link href="/reports/drift-latest.html" external>
-                View Full HTML Report
-              </Link>
-            }
-          >
-            Feature Drift Details
-          </Header>
-        }
-      >
+      <Container header={<Header variant="h2">Feature Drift Details</Header>}>
         <Table
+          loading={loading}
+          loadingText="Loading drift report..."
           columnDefinitions={[
             { id: 'featureName', header: 'Feature', cell: (item) => item.featureName },
             {
@@ -76,8 +79,13 @@ const DriftReportPage: React.FC = () => {
             { id: 'pValue', header: 'P-Value', cell: (item) => item.pValue.toFixed(4) },
             { id: 'statistic', header: 'Statistic', cell: (item) => item.statistic.toFixed(4) },
           ]}
-          items={mockDriftFeatures}
+          items={features}
           variant="embedded"
+          empty={
+            <Box textAlign="center" padding="m" color="text-body-secondary">
+              No feature drift data (Evidently reports appear here once monitoring has run).
+            </Box>
+          }
         />
       </Container>
     </SpaceBetween>

@@ -1,4 +1,4 @@
-"""Goldwind Algorithm Platform - Pipeline Execution Entry Point.
+"""Algorithm Platform - Pipeline Execution Entry Point.
 
 This script creates/updates and starts the SageMaker pipeline execution
 with the specified parameters.
@@ -19,7 +19,7 @@ def main():
     region = os.environ.get("AWS_DEFAULT_REGION", "cn-northwest-1")
     role = os.environ.get("SAGEMAKER_PIPELINE_ROLE_ARN")
     default_bucket = os.environ.get("SAGEMAKER_ARTIFACT_BUCKET")
-    pipeline_name = os.environ.get("SAGEMAKER_PROJECT_NAME", "GoldwindWindPowerPipeline")
+    pipeline_name = os.environ.get("SAGEMAKER_PROJECT_NAME", "AlgoWindPowerPipeline")
     callback_queue_url = os.environ.get("CALLBACK_QUEUE_URL")
 
     print(f"Region: {region}")

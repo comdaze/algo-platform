@@ -16,13 +16,17 @@ export interface MonitoringStackProps extends StackProps {
 
 export class MonitoringStack extends Stack {
   readonly backtestStateMachineArn: string;
+  readonly grafanaHost: string;
 
   constructor(scope: Construct, id: string, props: MonitoringStackProps) {
     super(scope, id, props);
 
     const monitoring = new MonitoringConstruct(this, 'Monitoring', {
       vpc: props.vpc,
+      dataBucket: props.dataBucket,
     });
+
+    this.grafanaHost = monitoring.grafanaUrl;
 
     const backtesting = new BacktestingConstruct(this, 'Backtesting', {
       sageMakerExecutionRole: props.sageMakerExecutionRole,

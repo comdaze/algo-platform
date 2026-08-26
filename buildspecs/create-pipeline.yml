@@ -1,0 +1,27 @@
+version: 0.2
+
+# One-off: create/upsert the SageMaker pipeline (AlgoWindPowerPipeline) via
+# run_pipeline.py. Uses the Aliyun pip index (Tsinghua/CERNET is unreachable
+# from AWS China CodeBuild). Env supplies the execution role + artifact bucket.
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: cn-northwest-1
+    SAGEMAKER_PROJECT_NAME: AlgoWindPowerPipeline
+    SAGEMAKER_PIPELINE_ROLE_ARN: arn:aws-cn:iam::456370280007:role/DataPlatformStack-SageMakerSageMakerExecutionRole31-o6H1LiOUvrLz
+    SAGEMAKER_ARTIFACT_BUCKET: dataplatformstack-sagemakersagemakerartifactbucket-rlgdbgwaguq4
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/
+      - pip install -r ml_pipeline/requirements.txt
+  build:
+    commands:
+      - echo "Creating/updating SageMaker pipeline $SAGEMAKER_PROJECT_NAME ..."
+      - python ml_pipeline/run_pipeline.py
+  post_build:
+    commands:
+      - echo "run_pipeline finished on $(date)"

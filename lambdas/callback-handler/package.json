@@ -1,5 +1,5 @@
 {
-  "name": "goldwind-lambda-callback-handler",
+  "name": "algo-lambda-callback-handler",
   "version": "1.0.0",
   "description": "Lambda function for pipeline callback handling",
   "private": true,

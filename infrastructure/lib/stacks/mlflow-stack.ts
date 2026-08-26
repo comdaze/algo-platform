@@ -8,12 +8,17 @@ export interface MlflowStackProps extends StackProps {
 }
 
 export class MlflowStack extends Stack {
+  readonly mlflowHost: string;
+
   constructor(scope: Construct, id: string, props: MlflowStackProps) {
     super(scope, id, props);
 
     const mlflow = new MlflowConstruct(this, 'MlflowConstruct', {
       vpc: props.vpc,
     });
+
+    // Authority (host:port) the nginx reverse-proxy targets for /mlflow/*.
+    this.mlflowHost = `${mlflow.loadBalancerDnsName}:5000`;
 
     new CfnOutput(this, 'MlflowTrackingUri', {
       value: mlflow.mlflowTrackingUri,

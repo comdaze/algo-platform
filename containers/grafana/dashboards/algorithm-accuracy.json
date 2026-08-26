@@ -50,7 +50,7 @@
       "type": "barchart",
       "targets": [
         {
-          "rawSQL": "SELECT province, AVG(mape) as avg_mape FROM goldwind_metrics.backtest_results GROUP BY province ORDER BY avg_mape DESC",
+          "rawSQL": "SELECT province, AVG(mape) as avg_mape FROM algo_metrics.backtest_results GROUP BY province ORDER BY avg_mape DESC",
           "format": "table"
         }
       ]
@@ -96,7 +96,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "rawSQL": "SELECT date_trunc('day', run_date) as time, AVG(mape) as mape FROM goldwind_metrics.backtest_results GROUP BY date_trunc('day', run_date) ORDER BY time",
+          "rawSQL": "SELECT date_trunc('day', run_date) as time, AVG(mape) as mape FROM algo_metrics.backtest_results GROUP BY date_trunc('day', run_date) ORDER BY time",
           "format": "time_series"
         }
       ]
@@ -130,7 +130,7 @@
       "type": "table",
       "targets": [
         {
-          "rawSQL": "SELECT variety, algorithm_id, AVG(mape) as avg_mape, AVG(rmse) as avg_rmse, AVG(mae) as avg_mae, AVG(r2) as avg_r2 FROM goldwind_metrics.backtest_results GROUP BY variety, algorithm_id ORDER BY avg_mape ASC",
+          "rawSQL": "SELECT variety, algorithm_id, AVG(mape) as avg_mape, AVG(rmse) as avg_rmse, AVG(mae) as avg_mae, AVG(r2) as avg_r2 FROM algo_metrics.backtest_results GROUP BY variety, algorithm_id ORDER BY avg_mape ASC",
           "format": "table"
         }
       ]
@@ -179,7 +179,7 @@
       "type": "gauge",
       "targets": [
         {
-          "rawSQL": "SELECT drift_score FROM goldwind_metrics.drift_reports ORDER BY report_date DESC LIMIT 1",
+          "rawSQL": "SELECT drift_score FROM algo_metrics.drift_reports ORDER BY report_date DESC LIMIT 1",
           "format": "table"
         }
       ]
@@ -187,7 +187,7 @@
   ],
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["goldwind", "algorithm", "accuracy"],
+  "tags": ["algo", "algorithm", "accuracy"],
   "templating": {
     "list": []
   },
@@ -198,7 +198,7 @@
   "timepicker": {},
   "timezone": "browser",
   "title": "Algorithm Accuracy Dashboard",
-  "uid": "goldwind-algo-accuracy",
+  "uid": "algo-accuracy",
   "version": 1,
   "weekStart": ""
 }

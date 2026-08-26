@@ -1,4 +1,4 @@
-sagemaker>=2.200
+sagemaker>=2.200,<3
 boto3
 pandas
 numpy

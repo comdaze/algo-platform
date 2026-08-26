@@ -45,7 +45,7 @@ describe('MonitoringStack', () => {
 
   test('creates DynamoDB table for backtest results', () => {
     template.hasResourceProperties('AWS::DynamoDB::Table', {
-      TableName: 'goldwind-backtest-results',
+      TableName: 'algo-backtest-results',
       KeySchema: [
         { AttributeName: 'algorithmId', KeyType: 'HASH' },
         { AttributeName: 'backtestId', KeyType: 'RANGE' },
@@ -61,10 +61,10 @@ describe('MonitoringStack', () => {
 
   test('creates SNS topics for alerts', () => {
     template.hasResourceProperties('AWS::SNS::Topic', {
-      TopicName: 'goldwind-model-alerts',
+      TopicName: 'algo-model-alerts',
     });
     template.hasResourceProperties('AWS::SNS::Topic', {
-      TopicName: 'goldwind-drift-alerts',
+      TopicName: 'algo-drift-alerts',
     });
   });
 

@@ -1,1 +1,1 @@
-# Goldwind Algorithm Platform - ML Pipeline Module
+# Algorithm Platform - ML Pipeline Module

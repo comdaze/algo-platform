@@ -1,7 +1,7 @@
 {
-  "name": "goldwind-algo-platform",
+  "name": "algo-platform",
   "version": "1.0.0",
-  "description": "金风天润算法平台 - Goldwind Tianrun Algorithm Platform",
+  "description": "金风天润算法平台 - Algorithm Platform",
   "private": true,
   "workspaces": [
     "infrastructure",

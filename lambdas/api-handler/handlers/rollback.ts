@@ -26,7 +26,7 @@ export async function triggerRollback(body: Record<string, unknown>) {
 
   await lambdaClient.send(
     new InvokeCommand({
-      FunctionName: 'goldwind-rollback-function',
+      FunctionName: 'algo-rollback-function',
       InvocationType: 'Event', // Asynchronous invocation
       Payload: Buffer.from(payload),
     })

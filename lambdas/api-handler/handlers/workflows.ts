@@ -4,26 +4,69 @@ import {
   DescribePipelineExecutionCommand,
   ListPipelineExecutionStepsCommand,
   SendPipelineExecutionStepSuccessCommand,
+  StartPipelineExecutionCommand,
 } from '@aws-sdk/client-sagemaker';
 
 const client = new SageMakerClient({ region: process.env.REGION });
 
+const DEFAULT_PIPELINE = process.env.PIPELINE_NAME || 'AlgoWindPowerPipeline';
+
+export async function startExecution(body: Record<string, unknown>) {
+  const pipelineName = (body.pipelineName as string) || DEFAULT_PIPELINE;
+  try {
+    const result = await client.send(
+      new StartPipelineExecutionCommand({
+        PipelineName: pipelineName,
+        PipelineExecutionDisplayName: `run-${Date.now()}`,
+      })
+    );
+    return {
+      statusCode: 202,
+      body: JSON.stringify({ pipelineExecutionArn: result.PipelineExecutionArn }),
+    };
+  } catch (err) {
+    const name = (err as { name?: string })?.name || '';
+    if (name === 'ResourceNotFound' || name === 'ResourceNotFoundException' || name === 'ValidationException') {
+      return {
+        statusCode: 409,
+        body: JSON.stringify({
+          message: `Pipeline "${pipelineName}" does not exist yet. Create it first by running the ML pipeline.`,
+        }),
+      };
+    }
+    throw err;
+  }
+}
+
 export async function listExecutions(queryParams: Record<string, string | undefined>) {
-  const pipelineName = queryParams.pipelineName || 'goldwind-algo-pipeline';
+  const pipelineName = queryParams.pipelineName || DEFAULT_PIPELINE;
 
-  const result = await client.send(
-    new ListPipelineExecutionsCommand({
-      PipelineName: pipelineName,
-      MaxResults: 50,
-    })
-  );
+  try {
+    const result = await client.send(
+      new ListPipelineExecutionsCommand({
+        PipelineName: pipelineName,
+        MaxResults: 50,
+      })
+    );
 
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      executions: result.PipelineExecutionSummaries || [],
-    }),
-  };
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        executions: result.PipelineExecutionSummaries || [],
+      }),
+    };
+  } catch (err) {
+    // The pipeline may not exist yet (no runs). Treat "not found" as an empty
+    // list rather than a 500, so the UI shows a clean empty state.
+    const name = (err as { name?: string })?.name || '';
+    if (name === 'ResourceNotFound' || name === 'ResourceNotFoundException' || name === 'ValidationException') {
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ executions: [] }),
+      };
+    }
+    throw err;
+  }
 }
 
 export async function getExecution(id: string) {

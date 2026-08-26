@@ -1,6 +1,10 @@
-FROM python:3.10-slim
+FROM public.ecr.aws/docker/library/python:3.12-slim
 
+# China mirrors: base image from AWS public ECR (Docker Hub is unreachable in
+# the China regions); pip from the Aliyun mirror (reliable from AWS China; the
+# Tsinghua/CERNET edu mirror is not reachable from CodeBuild's network).
 RUN pip install --no-cache-dir \
+    -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com \
     evidently \
     boto3 \
     pandas

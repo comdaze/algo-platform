@@ -23,7 +23,7 @@ export class CallbackConstruct extends Construct {
 
     // SQS Queue for receiving training completion messages from ECS tasks
     const callbackQueue = new sqs.Queue(this, 'CallbackQueue', {
-      queueName: 'goldwind-callback-queue',
+      queueName: 'algo-callback-queue',
       visibilityTimeout: cdk.Duration.seconds(300),
       retentionPeriod: cdk.Duration.days(7),
     });

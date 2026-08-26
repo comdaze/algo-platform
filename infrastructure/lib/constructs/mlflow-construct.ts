@@ -76,7 +76,9 @@ export class MlflowConstruct extends Construct {
 
     const database = new rds.DatabaseCluster(this, 'AuroraCluster', {
       engine: rds.DatabaseClusterEngine.auroraMysql({
-        version: rds.AuroraMysqlEngineVersion.VER_3_05_2,
+        // 3.05.2 is not offered in cn-northwest-1; pin to a version that is.
+        // Use .of() so this does not depend on a named enum constant existing.
+        version: rds.AuroraMysqlEngineVersion.of('8.0.mysql_aurora.3.08.2', '8.0'),
       }),
       defaultDatabaseName: dbName,
       credentials: rds.Credentials.fromUsername(username, {
@@ -138,6 +140,12 @@ export class MlflowConstruct extends Construct {
         cluster,
         taskDefinition,
         listenerPort: 5000,
+        // NOTE: left at the default (public) NLB. Flipping to internal forces a
+        // NLB replacement while the target group is still bound to the old LB,
+        // which CFN rejects ("target group cannot be associated with more than
+        // one load balancer"). The service SG only admits 10.0.0.0/16 on :5000,
+        // so targets reject non-VPC callers regardless; the in-VPC nginx proxy
+        // reaches it via the NLB DNS.
       }
     );
 
@@ -163,6 +171,6 @@ export class MlflowConstruct extends Construct {
     // =================== OUTPUTS ======================
     // ==================================================
     this.loadBalancerDnsName = fargateService.loadBalancer.loadBalancerDnsName;
-    this.mlflowTrackingUri = `http://${fargateService.loadBalancer.loadBalancerDnsName}:5000`;
+    this.mlflowTrackingUri = `http://${fargateService.loadBalancer.loadBalancerDnsName}:5000/mlflow`;
   }
 }

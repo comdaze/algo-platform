@@ -1,19 +1,13 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Table from '@cloudscape-design/components/table';
 import Header from '@cloudscape-design/components/header';
 import Button from '@cloudscape-design/components/button';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
-import type { PipelineExecution } from '../../types';
-
-const mockExecutions: PipelineExecution[] = [
-  { id: '1', pipelineName: 'train-heilongjiang', executionId: 'exec-001', status: 'Succeeded', startTime: '2024-01-15 10:00', endTime: '2024-01-15 10:25', duration: '25m', steps: [], pendingApproval: false },
-  { id: '2', pipelineName: 'train-xinjiang', executionId: 'exec-002', status: 'Failed', startTime: '2024-01-15 09:30', endTime: '2024-01-15 09:42', duration: '12m', steps: [], pendingApproval: false },
-  { id: '3', pipelineName: 'train-inner-mongolia', executionId: 'exec-003', status: 'Executing', startTime: '2024-01-15 09:00', duration: '45m+', steps: [], pendingApproval: false },
-  { id: '4', pipelineName: 'retrain-ningxia', executionId: 'exec-004', status: 'Stopped', startTime: '2024-01-14 22:00', endTime: '2024-01-14 22:30', duration: '30m', steps: [], pendingApproval: true },
-  { id: '5', pipelineName: 'evaluate-all', executionId: 'exec-005', status: 'Succeeded', startTime: '2024-01-14 20:00', endTime: '2024-01-14 21:10', duration: '1h 10m', steps: [], pendingApproval: false },
-];
+import Alert from '@cloudscape-design/components/alert';
+import Box from '@cloudscape-design/components/box';
+import { listExecutions, startExecution, type WorkflowExecution } from '../../api/workflows';
 
 const statusTypeMap: Record<string, 'success' | 'error' | 'in-progress' | 'stopped' | 'pending'> = {
   Succeeded: 'success',
@@ -23,47 +17,109 @@ const statusTypeMap: Record<string, 'success' | 'error' | 'in-progress' | 'stopp
   Stopped: 'stopped',
 };
 
+type Notice = { type: 'success' | 'error' | 'info'; text: string } | null;
+
 const WorkflowList: React.FC = () => {
   const navigate = useNavigate();
+  const [items, setItems] = useState<WorkflowExecution[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [running, setRunning] = useState(false);
+  const [notice, setNotice] = useState<Notice>(null);
+
+  const reload = useCallback(() => {
+    setLoading(true);
+    return listExecutions()
+      .then((data) => {
+        setItems(data);
+        setError(null);
+      })
+      .catch((e) => setError(e?.message || 'Failed to load executions'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
+
+  const handleRun = async () => {
+    setRunning(true);
+    setNotice(null);
+    try {
+      const res = await startExecution();
+      setNotice({ type: 'success', text: `Pipeline execution started: ${res.pipelineExecutionArn || 'ok'}` });
+      await reload();
+    } catch (e) {
+      const err = e as { response?: { data?: { message?: string } }; message?: string };
+      setNotice({ type: 'error', text: err?.response?.data?.message || err?.message || 'Failed to start execution' });
+    } finally {
+      setRunning(false);
+    }
+  };
 
   return (
-    <Table
-      header={<Header variant="h1">Pipeline Executions</Header>}
-      columnDefinitions={[
-        { id: 'pipelineName', header: 'Pipeline Name', cell: (item) => item.pipelineName },
-        { id: 'executionId', header: 'Execution ID', cell: (item) => item.executionId },
-        {
-          id: 'status',
-          header: 'Status',
-          cell: (item) => (
-            <StatusIndicator type={statusTypeMap[item.status] || 'pending'}>
-              {item.status}
-            </StatusIndicator>
-          ),
-        },
-        { id: 'startTime', header: 'Start Time', cell: (item) => item.startTime },
-        { id: 'duration', header: 'Duration', cell: (item) => item.duration || '-' },
-        {
-          id: 'actions',
-          header: 'Actions',
-          cell: (item) => (
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button variant="inline-link" onClick={() => navigate(`/workflows/${item.id}`)}>
+    <SpaceBetween size="m">
+      {error && (
+        <Alert type="error" header="Failed to load executions" dismissible onDismiss={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+      {notice && (
+        <Alert type={notice.type} dismissible onDismiss={() => setNotice(null)}>
+          {notice.text}
+        </Alert>
+      )}
+      <Table
+        loading={loading}
+        loadingText="Loading executions..."
+        header={
+          <Header
+            variant="h1"
+            counter={!loading ? `(${items.length})` : undefined}
+            actions={
+              <SpaceBetween direction="horizontal" size="xs">
+                <Button iconName="refresh" onClick={reload} disabled={loading} />
+                <Button variant="primary" loading={running} onClick={handleRun}>
+                  Run Pipeline
+                </Button>
+              </SpaceBetween>
+            }
+          >
+            Pipeline Executions
+          </Header>
+        }
+        columnDefinitions={[
+          { id: 'pipelineName', header: 'Pipeline Name', cell: (item) => item.pipelineName },
+          { id: 'executionId', header: 'Execution ID', cell: (item) => item.executionId },
+          {
+            id: 'status',
+            header: 'Status',
+            cell: (item) => (
+              <StatusIndicator type={statusTypeMap[item.status] || 'pending'}>{item.status}</StatusIndicator>
+            ),
+          },
+          { id: 'startTime', header: 'Start Time', cell: (item) => item.startTime || '-' },
+          {
+            id: 'actions',
+            header: 'Actions',
+            cell: (item) => (
+              <Button variant="inline-link" onClick={() => navigate(`/workflows/${encodeURIComponent(item.id)}`)}>
                 View
               </Button>
-              {item.pendingApproval && (
-                <>
-                  <Button variant="inline-link">Approve</Button>
-                  <Button variant="inline-link">Reject</Button>
-                </>
-              )}
-            </SpaceBetween>
-          ),
-        },
-      ]}
-      items={mockExecutions}
-      empty={<SpaceBetween size="m"><b>No executions</b></SpaceBetween>}
-    />
+            ),
+          },
+        ]}
+        items={items}
+        empty={
+          <Box textAlign="center" padding="m">
+            <b>No pipeline executions</b>
+            <Box variant="p" color="text-body-secondary">
+              Click "Run Pipeline" to start one (the SageMaker pipeline must exist first).
+            </Box>
+          </Box>
+        }
+      />
+    </SpaceBetween>
   );
 };
 

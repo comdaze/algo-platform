@@ -1,4 +1,4 @@
-"""Goldwind Algorithm Platform - Wind Power Forecasting SageMaker Pipeline.
+"""Algorithm Platform - Wind Power Forecasting SageMaker Pipeline.
 
 Pipeline steps:
     PreprocessData -> TrainModel -> EvaluateModel -> CheckMAPE
@@ -58,9 +58,9 @@ def get_pipeline(
     region="cn-northwest-1",
     role=None,
     default_bucket=None,
-    model_package_group_name="GoldwindWindPowerModelPackageGroup",
-    pipeline_name="GoldwindWindPowerPipeline",
-    base_job_prefix="GoldwindWindPower",
+    model_package_group_name="AlgoWindPowerModelPackageGroup",
+    pipeline_name="AlgoWindPowerPipeline",
+    base_job_prefix="AlgoWindPower",
     callback_queue_url=None,
 ):
     """Get a SageMaker Pipeline for wind power forecasting.
@@ -245,7 +245,7 @@ def get_pipeline(
 
     # Step 5: H20TrainingCallback - CallbackStep for large models needing H20 GPU
     sqs_queue_url = callback_queue_url or os.environ.get(
-        "CALLBACK_QUEUE_URL", "https://sqs.cn-northwest-1.amazonaws.com.cn/123456789012/goldwind-callback-queue"
+        "CALLBACK_QUEUE_URL", "https://sqs.cn-northwest-1.amazonaws.com.cn/123456789012/algo-callback-queue"
     )
 
     step_h20_callback = CallbackStep(

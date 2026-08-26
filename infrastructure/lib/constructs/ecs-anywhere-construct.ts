@@ -3,7 +3,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as cr from 'aws-cdk-lib/custom-resources';
 
 export interface EcsAnywhereConstructProps {
   readonly vpc: ec2.IVpc;
@@ -18,7 +18,7 @@ export class EcsAnywhereConstruct extends Construct {
   constructor(scope: Construct, id: string, props: EcsAnywhereConstructProps) {
     super(scope, id);
 
-    const clusterName = props.clusterName || 'goldwind-h20-cluster';
+    const clusterName = props.clusterName || 'algo-h20-cluster';
 
     // ECS Cluster with EXTERNAL capacity provider
     this.cluster = new ecs.Cluster(this, 'EcsAnywhereCluster', {
@@ -27,9 +27,8 @@ export class EcsAnywhereConstruct extends Construct {
       enableFargateCapacityProviders: false,
     });
 
-    this.cluster.addDefaultCapacityProviderStrategy([
-      { capacityProvider: 'FARGATE' },
-    ]);
+    // EXTERNAL (ECS Anywhere) instances run tasks via the EXTERNAL launch type;
+    // no Fargate/ASG default capacity-provider strategy applies to this cluster.
 
     // IAM role for ECS Anywhere external instances
     this.ecsExternalInstanceRole = new iam.Role(this, 'EcsExternalInstanceRole', {
@@ -40,11 +39,43 @@ export class EcsAnywhereConstruct extends Construct {
       ],
     });
 
-    // SSM Activation for external instance registration
-    const ssmActivation = new ssm.CfnActivation(this, 'SsmActivation', {
-      iamRole: this.ecsExternalInstanceRole.roleName,
-      registrationLimit: 10,
-      defaultInstanceName: `${clusterName}-external-instance`,
+    // SSM Activation for external instance registration.
+    // CloudFormation has no AWS::SSM::Activation resource type, so we create the
+    // hybrid activation through a custom resource calling the SSM API at deploy time.
+    const ssmActivation = new cr.AwsCustomResource(this, 'SsmActivation', {
+      onCreate: {
+        service: 'SSM',
+        action: 'createActivation',
+        parameters: {
+          IamRole: this.ecsExternalInstanceRole.roleName,
+          RegistrationLimit: 10,
+          DefaultInstanceName: `${clusterName}-external-instance`,
+          Description: `ECS Anywhere activation for ${clusterName}`,
+        },
+        physicalResourceId: cr.PhysicalResourceId.fromResponse('ActivationId'),
+      },
+      onDelete: {
+        service: 'SSM',
+        action: 'deleteActivation',
+        parameters: {
+          ActivationId: new cr.PhysicalResourceIdReference(),
+        },
+      },
+      policy: cr.AwsCustomResourcePolicy.fromStatements([
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['ssm:CreateActivation', 'ssm:DeleteActivation'],
+          resources: ['*'],
+        }),
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['iam:PassRole'],
+          resources: [this.ecsExternalInstanceRole.roleArn],
+        }),
+      ]),
+      // Use the Lambda built-in AWS SDK (SSM is included); avoids a deploy-time
+      // npm fetch that is unreliable in the China regions.
+      installLatestAwsSdk: false,
     });
 
     ssmActivation.node.addDependency(this.ecsExternalInstanceRole);
@@ -74,7 +105,7 @@ export class EcsAnywhereConstruct extends Construct {
     });
 
     new cdk.CfnOutput(this, 'SsmActivationId', {
-      value: ssmActivation.attrActivationId,
+      value: ssmActivation.getResponseField('ActivationId'),
     });
   }
 }

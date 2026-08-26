@@ -1,7 +1,7 @@
 {
-  "name": "goldwind-algo-platform-infrastructure",
+  "name": "algo-platform-infrastructure",
   "version": "1.0.0",
-  "description": "CDK infrastructure for Goldwind Algorithm Platform",
+  "description": "CDK infrastructure for Algorithm Platform",
   "private": true,
   "scripts": {
     "build": "tsc",

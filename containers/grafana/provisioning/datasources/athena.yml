@@ -7,7 +7,7 @@ datasources:
     jsonData:
       defaultRegion: cn-northwest-1
       catalog: AwsDataCatalog
-      database: goldwind_metrics
+      database: algo_metrics
       workgroup: primary
-      outputLocation: s3://goldwind-athena-results/
+      outputLocation: s3://algo-athena-results/
     editable: true
