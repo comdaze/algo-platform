@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import ContentLayout from '@cloudscape-design/components/content-layout';
 import Header from '@cloudscape-design/components/header';
 import Container from '@cloudscape-design/components/container';
 import SpaceBetween from '@cloudscape-design/components/space-between';
@@ -72,10 +73,15 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <SpaceBetween size="l">
-      <Header variant="h1" description="全局大模型配置：供 AutoML 助手 (MLZero) 等使用。OpenAI 兼容端点 → Endpoint URL 映射为 proxy_url。">
-        设置 · Settings
-      </Header>
+    <ContentLayout
+      headerVariant="high-contrast"
+      header={
+        <Header variant="h1" description="全局大模型配置：供 AutoML 助手 (MLZero) 等使用。OpenAI 兼容端点 → Endpoint URL 映射为 proxy_url。">
+          设置 · Settings
+        </Header>
+      }
+    >
+      <SpaceBetween size="l">
       {flash.length > 0 && <Flashbar items={flash} />}
       <Alert type="info" header="关于 API Key">
         API Key 仅写入后端 <b>Secrets Manager</b>（<code>algo/llm/config</code>），前端与 GET 接口<b>永不回显</b>；留空保存表示沿用已存的 Key。
@@ -121,7 +127,8 @@ const SettingsPage: React.FC = () => {
       <Box color="text-body-secondary" fontSize="body-s">
         提示：保存后，AutoML 助手运行时后端会从 Secrets Manager 取出 Key 注入 <code>OPENAI_API_KEY</code>，并用 Endpoint/Model 生成 MLZero 的 <code>custom_config.yaml</code>（proxy_url + model）。
       </Box>
-    </SpaceBetween>
+      </SpaceBetween>
+    </ContentLayout>
   );
 };
 

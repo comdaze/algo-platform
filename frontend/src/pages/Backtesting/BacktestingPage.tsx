@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import ContentLayout from '@cloudscape-design/components/content-layout';
 import Header from '@cloudscape-design/components/header';
 import Container from '@cloudscape-design/components/container';
 import SpaceBetween from '@cloudscape-design/components/space-between';
@@ -80,8 +81,18 @@ const BacktestingPage: React.FC = () => {
   };
 
   return (
-    <SpaceBetween size="l">
-      <Header variant="h1">Backtesting</Header>
+    <ContentLayout
+      headerVariant="high-contrast"
+      header={
+        <Header
+          variant="h1"
+          description="Run historical simulations to evaluate forecast accuracy against actual generation data."
+        >
+          Backtesting
+        </Header>
+      }
+    >
+      <SpaceBetween size="l">
       {error && (
         <Alert type="error" header="Backtest error" dismissible onDismiss={() => setError(null)}>
           {error}
@@ -139,7 +150,8 @@ const BacktestingPage: React.FC = () => {
           </SpaceBetween>
         </Container>
       )}
-    </SpaceBetween>
+      </SpaceBetween>
+    </ContentLayout>
   );
 };
 

@@ -18,6 +18,10 @@ interface EmbeddedFrameProps {
  * under the platform's own origin, the parent can reach contentDocument and
  * strip the embedded app's chrome for a seamless look. The try/catch keeps it
  * safe if the frame is ever cross-origin.
+ *
+ * The iframe itself is chromeless (no border/background): callers wrap it in a
+ * Cloudscape <Container>, which supplies the themed border, radius and
+ * background so the embed matches light and dark mode automatically.
  */
 const EmbeddedFrame: React.FC<EmbeddedFrameProps> = ({ title, src, injectCss, minHeight = 480 }) => {
   const ref = useRef<HTMLIFrameElement>(null);
@@ -46,10 +50,11 @@ const EmbeddedFrame: React.FC<EmbeddedFrameProps> = ({ title, src, injectCss, mi
       onLoad={onLoad}
       style={{
         width: '100%',
-        height: 'calc(100vh - 220px)',
+        height: 'calc(100vh - 240px)',
         minHeight,
-        border: '1px solid #e9ebed',
-        borderRadius: 8,
+        border: 'none',
+        display: 'block',
+        background: 'transparent',
       }}
     />
   );

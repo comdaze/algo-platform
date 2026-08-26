@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import ContentLayout from '@cloudscape-design/components/content-layout';
 import Header from '@cloudscape-design/components/header';
 import Container from '@cloudscape-design/components/container';
 import SpaceBetween from '@cloudscape-design/components/space-between';
@@ -74,47 +75,53 @@ const MonitoringDashboard: React.FC = () => {
   );
 
   return (
-    <SpaceBetween size="l">
-      <Header
-        variant="h1"
-        actions={
-          <SpaceBetween direction="horizontal" size="xs">
-            <SegmentedControl
-              selectedId={timeRange}
-              onChange={({ detail }) => setTimeRange(detail.selectedId)}
-              options={[
-                { text: '7d', id: '7d' },
-                { text: '30d', id: '30d' },
-                { text: '90d', id: '90d' },
-              ]}
-            />
-            <Button iconName="refresh" onClick={loadDrift} />
-          </SpaceBetween>
-        }
-      >
-        Monitoring Dashboard
-      </Header>
+    <ContentLayout
+      headerVariant="high-contrast"
+      header={
+        <Header
+          variant="h1"
+          description="Model accuracy and data-drift health across deployed wind & solar forecasting models."
+          actions={
+            <SpaceBetween direction="horizontal" size="xs">
+              <SegmentedControl
+                selectedId={timeRange}
+                onChange={({ detail }) => setTimeRange(detail.selectedId)}
+                options={[
+                  { text: '7d', id: '7d' },
+                  { text: '30d', id: '30d' },
+                  { text: '90d', id: '90d' },
+                ]}
+              />
+              <Button iconName="refresh" onClick={loadDrift} />
+            </SpaceBetween>
+          }
+        >
+          Monitoring
+        </Header>
+      }
+    >
+      <SpaceBetween size="l">
+        <Container
+          header={
+            <Header variant="h2" description="Illustrative — no backend per-province time-series source yet">
+              Model Accuracy (MAPE per Province)
+            </Header>
+          }
+        >
+          <ReactECharts option={mapeOption} style={{ height: '400px' }} />
+        </Container>
 
-      <Container
-        header={
-          <Header variant="h2" description="Illustrative — no backend per-province time-series source yet">
-            Model Accuracy (MAPE per Province)
-          </Header>
-        }
-      >
-        <ReactECharts option={mapeOption} style={{ height: '400px' }} />
-      </Container>
-
-      <Container
-        header={
-          <Header variant="h2" description="Live — from the drift monitoring endpoint">
-            Drift Detection
-          </Header>
-        }
-      >
-        <ReactECharts option={driftOption} style={{ height: '300px' }} notMerge />
-      </Container>
-    </SpaceBetween>
+        <Container
+          header={
+            <Header variant="h2" description="Live — from the drift monitoring endpoint">
+              Drift Detection
+            </Header>
+          }
+        >
+          <ReactECharts option={driftOption} style={{ height: '300px' }} notMerge />
+        </Container>
+      </SpaceBetween>
+    </ContentLayout>
   );
 };
 

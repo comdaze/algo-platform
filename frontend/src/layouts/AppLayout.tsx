@@ -6,31 +6,67 @@ import SideNavigation, { SideNavigationProps } from '@cloudscape-design/componen
 import BreadcrumbGroup, { BreadcrumbGroupProps } from '@cloudscape-design/components/breadcrumb-group';
 import { useTheme } from '../theme/ThemeContext';
 
+// SageMaker Studio-like shell: the product name anchors the top of the nav
+// rail (SideNavigation header), and destinations are grouped into expandable
+// sections. Every href below maps to an existing react-router route — this is
+// a visual regrouping only, no routes added or removed.
+const navHeader: SideNavigationProps['header'] = {
+  text: '算法平台 · Algorithm Platform',
+  href: '/',
+};
+
 const navItems: SideNavigationProps.Item[] = [
   { type: 'link', text: 'Dashboard', href: '/' },
-  { type: 'link', text: 'Algorithms', href: '/algorithms' },
   {
-    type: 'expandable-link-group',
-    text: 'Workflows',
-    href: '/workflows',
+    type: 'section-group',
+    title: 'Models',
     items: [
-      { type: 'link', text: 'Executions', href: '/workflows' },
-      { type: 'link', text: 'Pipeline Editor', href: '/pipelines/editor' },
+      {
+        type: 'section',
+        text: 'Algorithms',
+        defaultExpanded: true,
+        items: [
+          { type: 'link', text: 'Registry', href: '/algorithms' },
+          { type: 'link', text: 'Coverage Map', href: '/algorithms/coverage' },
+        ],
+      },
+      {
+        type: 'section',
+        text: 'Experiments & Models',
+        defaultExpanded: true,
+        items: [
+          { type: 'link', text: 'Experiments (MLflow)', href: '/experiments' },
+          { type: 'link', text: 'Models (MLflow)', href: '/models' },
+        ],
+      },
     ],
   },
   {
-    type: 'expandable-link-group',
-    text: 'Monitoring',
-    href: '/monitoring',
+    type: 'section-group',
+    title: 'Operations',
     items: [
-      { type: 'link', text: 'Overview', href: '/monitoring' },
-      { type: 'link', text: 'Drift Report', href: '/monitoring/drift' },
-      { type: 'link', text: 'Grafana 看板', href: '/monitoring/grafana' },
+      {
+        type: 'section',
+        text: 'Workflows',
+        defaultExpanded: true,
+        items: [
+          { type: 'link', text: 'Executions', href: '/workflows' },
+          { type: 'link', text: 'Pipeline Editor', href: '/pipelines/editor' },
+        ],
+      },
+      {
+        type: 'section',
+        text: 'Monitoring',
+        defaultExpanded: true,
+        items: [
+          { type: 'link', text: 'Overview', href: '/monitoring' },
+          { type: 'link', text: 'Drift Report', href: '/monitoring/drift' },
+          { type: 'link', text: 'Grafana 看板', href: '/monitoring/grafana' },
+        ],
+      },
+      { type: 'link', text: 'Backtesting', href: '/backtesting' },
     ],
   },
-  { type: 'link', text: 'Experiments (MLflow)', href: '/experiments' },
-  { type: 'link', text: 'Models (MLflow)', href: '/models' },
-  { type: 'link', text: 'Backtesting', href: '/backtesting' },
   { type: 'divider' },
   { type: 'link', text: '设置 · Settings', href: '/settings' },
 ];
@@ -38,10 +74,28 @@ const navItems: SideNavigationProps.Item[] = [
 const breadcrumbMap: Record<string, BreadcrumbGroupProps.Item[]> = {
   '/': [{ text: 'Home', href: '/' }],
   '/algorithms': [{ text: 'Home', href: '/' }, { text: 'Algorithms', href: '/algorithms' }],
+  '/algorithms/coverage': [
+    { text: 'Home', href: '/' },
+    { text: 'Algorithms', href: '/algorithms' },
+    { text: 'Coverage Map', href: '/algorithms/coverage' },
+  ],
   '/workflows': [{ text: 'Home', href: '/' }, { text: 'Workflows', href: '/workflows' }],
-  '/pipelines/editor': [{ text: 'Home', href: '/' }, { text: 'Workflows', href: '/workflows' }, { text: 'Pipeline Editor', href: '/pipelines/editor' }],
+  '/pipelines/editor': [
+    { text: 'Home', href: '/' },
+    { text: 'Workflows', href: '/workflows' },
+    { text: 'Pipeline Editor', href: '/pipelines/editor' },
+  ],
   '/monitoring': [{ text: 'Home', href: '/' }, { text: 'Monitoring', href: '/monitoring' }],
-  '/monitoring/grafana': [{ text: 'Home', href: '/' }, { text: 'Monitoring', href: '/monitoring' }, { text: 'Grafana', href: '/monitoring/grafana' }],
+  '/monitoring/drift': [
+    { text: 'Home', href: '/' },
+    { text: 'Monitoring', href: '/monitoring' },
+    { text: 'Drift Report', href: '/monitoring/drift' },
+  ],
+  '/monitoring/grafana': [
+    { text: 'Home', href: '/' },
+    { text: 'Monitoring', href: '/monitoring' },
+    { text: 'Grafana', href: '/monitoring/grafana' },
+  ],
   '/experiments': [{ text: 'Home', href: '/' }, { text: 'Experiments (MLflow)', href: '/experiments' }],
   '/models': [{ text: 'Home', href: '/' }, { text: 'Models (MLflow)', href: '/models' }],
   '/backtesting': [{ text: 'Home', href: '/' }, { text: 'Backtesting', href: '/backtesting' }],
@@ -89,13 +143,17 @@ const MainLayout: React.FC = () => {
         ]}
       />
       <AppLayout
+        headerVariant="high-contrast"
         navigation={
           <SideNavigation
             activeHref={location.pathname}
+            header={navHeader}
             items={navItems}
             onFollow={(event) => {
-              event.preventDefault();
-              navigate(event.detail.href);
+              if (!event.detail.external) {
+                event.preventDefault();
+                navigate(event.detail.href);
+              }
             }}
           />
         }

@@ -1,11 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import ContentLayout from '@cloudscape-design/components/content-layout';
 import Container from '@cloudscape-design/components/container';
 import Header from '@cloudscape-design/components/header';
 import Grid from '@cloudscape-design/components/grid';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Box from '@cloudscape-design/components/box';
+import Button from '@cloudscape-design/components/button';
+import Link from '@cloudscape-design/components/link';
+import KeyValuePairs from '@cloudscape-design/components/key-value-pairs';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import Table from '@cloudscape-design/components/table';
+import { useNavigate } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
 import type { Algorithm } from '../../types';
@@ -27,16 +32,32 @@ const statusTypeMap: Record<string, 'success' | 'error' | 'in-progress' | 'stopp
   Stopped: 'stopped',
 };
 
+const isWind = (v: string) => /wind|风/i.test(v || '');
+const isSolar = (v: string) => /solar|pv|光|太阳/i.test(v || '');
+
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [algorithms, setAlgorithms] = useState<Algorithm[]>([]);
   const [executions, setExecutions] = useState<WorkflowExecution[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    listAlgorithms().then(setAlgorithms).catch(() => setAlgorithms([]));
-    listExecutions().then(setExecutions).catch(() => setExecutions([]));
+  const reload = useCallback(() => {
+    setLoading(true);
+    Promise.allSettled([listAlgorithms(), listExecutions()])
+      .then(([a, e]) => {
+        setAlgorithms(a.status === 'fulfilled' ? a.value : []);
+        setExecutions(e.status === 'fulfilled' ? e.value : []);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    reload();
+  }, [reload]);
+
   const totalAlgorithms = algorithms.length;
+  const windCount = algorithms.filter((a) => isWind(a.variety)).length;
+  const solarCount = algorithms.filter((a) => isSolar(a.variety)).length;
   const activeDeployments = algorithms.filter((a) => a.status === 'production').length;
   const activeAlerts = algorithms.filter((a) => a.mape > 8).length;
   const averageMape =
@@ -61,43 +82,119 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <SpaceBetween size="l">
-      <Header variant="h1">Dashboard</Header>
-      <Grid gridDefinition={[{ colspan: 3 }, { colspan: 3 }, { colspan: 3 }, { colspan: 3 }]}>
-        <Container>
-          <Box variant="awsui-key-label">Total Algorithms</Box>
-          <Box variant="h1">{totalAlgorithms}</Box>
-        </Container>
-        <Container>
-          <Box variant="awsui-key-label">Production Deployments</Box>
-          <StatusIndicator type="success">
-            <Box variant="h1">{activeDeployments}</Box>
-          </StatusIndicator>
-        </Container>
-        <Container>
-          <Box variant="awsui-key-label">Algorithms Over 8% MAPE</Box>
-          <Box variant="h1" color={activeAlerts > 0 ? 'text-status-error' : undefined}>
-            {activeAlerts}
-          </Box>
-        </Container>
-        <Container>
-          <Box variant="awsui-key-label">Average MAPE</Box>
-          <Box variant="h1">{averageMape}%</Box>
-        </Container>
-      </Grid>
+    <ContentLayout
+      headerVariant="high-contrast"
+      header={
+        <Header
+          variant="h1"
+          description="Monitor wind & solar power-forecasting model performance, pipeline executions, and system health at a glance."
+          actions={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button iconName="refresh" loading={loading} onClick={reload}>
+                Refresh
+              </Button>
+              <Button variant="primary" onClick={() => navigate('/algorithms')}>
+                View algorithms
+              </Button>
+            </SpaceBetween>
+          }
+        >
+          算法平台 · Algorithm Platform
+        </Header>
+      }
+    >
+      <SpaceBetween size="l">
+        <Grid
+          gridDefinition={[
+            { colspan: { default: 12, xs: 6, l: 3 } },
+            { colspan: { default: 12, xs: 6, l: 3 } },
+            { colspan: { default: 12, xs: 6, l: 3 } },
+            { colspan: { default: 12, xs: 6, l: 3 } },
+          ]}
+        >
+          <Container fitHeight header={<Header variant="h2" description="Registered across all environments">Total algorithms</Header>}>
+            <KeyValuePairs
+              columns={2}
+              items={[
+                {
+                  label: 'Total',
+                  value: (
+                    <Link variant="awsui-value-large" onFollow={(e) => { e.preventDefault(); navigate('/algorithms'); }} href="/algorithms">
+                      {String(totalAlgorithms)}
+                    </Link>
+                  ),
+                },
+                { label: 'Production', value: <StatusIndicator type="success">{`${activeDeployments} live`}</StatusIndicator> },
+                { label: 'Wind', value: String(windCount) },
+                { label: 'Solar', value: String(solarCount) },
+              ]}
+            />
+          </Container>
+          <Container fitHeight header={<Header variant="h2" description="Models serving live forecasts">Production deployments</Header>}>
+            <KeyValuePairs
+              columns={2}
+              items={[
+                { label: 'Deployed', value: <Box variant="awsui-value-large">{String(activeDeployments)}</Box> },
+                {
+                  label: 'Health',
+                  value:
+                    activeDeployments > 0 ? (
+                      <StatusIndicator type="success">All healthy</StatusIndicator>
+                    ) : (
+                      <StatusIndicator type="pending">None</StatusIndicator>
+                    ),
+                },
+              ]}
+            />
+          </Container>
+          <Container fitHeight header={<Header variant="h2" description="Algorithms over the 8% MAPE alert line">Active alerts</Header>}>
+            <KeyValuePairs
+              columns={2}
+              items={[
+                { label: 'Alerts', value: <Box variant="awsui-value-large">{String(activeAlerts)}</Box> },
+                {
+                  label: 'Severity',
+                  value:
+                    activeAlerts > 0 ? (
+                      <StatusIndicator type="warning">{`${activeAlerts} over target`}</StatusIndicator>
+                    ) : (
+                      <StatusIndicator type="success">Nominal</StatusIndicator>
+                    ),
+                },
+              ]}
+            />
+          </Container>
+          <Container fitHeight header={<Header variant="h2" description="Mean absolute percentage error (avg)">Average MAPE</Header>}>
+            <KeyValuePairs
+              columns={2}
+              items={[
+                { label: 'Overall', value: <Box variant="awsui-value-large">{`${averageMape}%`}</Box> },
+                {
+                  label: 'Target',
+                  value:
+                    averageMape !== '-' && Number(averageMape) <= 5 ? (
+                      <StatusIndicator type="success">Within 5%</StatusIndicator>
+                    ) : (
+                      <StatusIndicator type="warning">Above 5%</StatusIndicator>
+                    ),
+                },
+              ]}
+            />
+          </Container>
+        </Grid>
 
-      <Container
-        header={
-          <Header variant="h2" description="Illustrative — no backend time-series metrics source yet">
-            MAPE Trend (Last 30 Days)
-          </Header>
-        }
-      >
-        <ReactECharts option={chartOption} style={{ height: '300px' }} />
-      </Container>
+        <Container
+          header={
+            <Header variant="h2" description="Illustrative — no backend time-series metrics source yet">
+              MAPE Trend (Last 30 Days)
+            </Header>
+          }
+        >
+          <ReactECharts option={chartOption} style={{ height: '300px' }} />
+        </Container>
 
-      <Container header={<Header variant="h2">Recent Pipeline Executions</Header>}>
         <Table
+          variant="container"
           columnDefinitions={[
             { id: 'pipeline', header: 'Pipeline', cell: (item) => item.pipelineName },
             {
@@ -110,15 +207,27 @@ const Dashboard: React.FC = () => {
             { id: 'startTime', header: 'Start Time', cell: (item) => item.startTime || '-' },
           ]}
           items={executions.slice(0, 5)}
-          variant="embedded"
+          loading={loading}
+          loadingText="Loading executions..."
+          header={
+            <Header
+              variant="h2"
+              counter={executions.length ? `(${executions.length})` : undefined}
+              actions={
+                <Button onClick={() => navigate('/workflows')}>View all</Button>
+              }
+            >
+              Recent Pipeline Executions
+            </Header>
+          }
           empty={
             <Box textAlign="center" padding="m" color="text-body-secondary">
               No recent executions
             </Box>
           }
         />
-      </Container>
-    </SpaceBetween>
+      </SpaceBetween>
+    </ContentLayout>
   );
 };
 
