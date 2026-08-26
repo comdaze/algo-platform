@@ -1,115 +1,108 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import AppLayout from '@cloudscape-design/components/app-layout';
 import TopNavigation from '@cloudscape-design/components/top-navigation';
 import SideNavigation, { SideNavigationProps } from '@cloudscape-design/components/side-navigation';
 import BreadcrumbGroup, { BreadcrumbGroupProps } from '@cloudscape-design/components/breadcrumb-group';
 import { useTheme } from '../theme/ThemeContext';
+import { useLang } from '../i18n';
 
-// SageMaker Studio-like shell: the product name anchors the top of the nav
-// rail (SideNavigation header), and destinations are grouped into expandable
-// sections. Every href below maps to an existing react-router route — this is
-// a visual regrouping only, no routes added or removed.
-const navHeader: SideNavigationProps['header'] = {
-  text: '算法平台 · Algorithm Platform',
-  href: '/',
-};
+// SageMaker Studio-like shell. The product name lives ONLY in the top bar
+// (TopNavigation identity) — the SideNavigation no longer repeats it as a
+// header. Destinations are grouped into expandable sections; every href maps
+// to an existing react-router route (visual regrouping + i18n only).
+type T = (key: string) => string;
 
-const navItems: SideNavigationProps.Item[] = [
-  { type: 'link', text: 'Dashboard', href: '/' },
-  {
-    type: 'section-group',
-    title: 'Models',
-    items: [
-      {
-        type: 'section',
-        text: 'Algorithms',
-        defaultExpanded: true,
-        items: [
-          { type: 'link', text: 'Registry', href: '/algorithms' },
-          { type: 'link', text: 'Coverage Map', href: '/algorithms/coverage' },
-        ],
-      },
-      {
-        type: 'section',
-        text: 'Experiments & Models',
-        defaultExpanded: true,
-        items: [
-          { type: 'link', text: 'Experiments (MLflow)', href: '/experiments' },
-          { type: 'link', text: 'Models (MLflow)', href: '/models' },
-        ],
-      },
-    ],
-  },
-  {
-    type: 'section-group',
-    title: 'Operations',
-    items: [
-      {
-        type: 'section',
-        text: 'Workflows',
-        defaultExpanded: true,
-        items: [
-          { type: 'link', text: 'Executions', href: '/workflows' },
-          { type: 'link', text: 'Pipeline Editor', href: '/pipelines/editor' },
-        ],
-      },
-      {
-        type: 'section',
-        text: 'Monitoring',
-        defaultExpanded: true,
-        items: [
-          { type: 'link', text: 'Overview', href: '/monitoring' },
-          { type: 'link', text: 'Drift Report', href: '/monitoring/drift' },
-          { type: 'link', text: 'Grafana 看板', href: '/monitoring/grafana' },
-        ],
-      },
-      { type: 'link', text: 'Backtesting', href: '/backtesting' },
-    ],
-  },
-  { type: 'divider' },
-  { type: 'link', text: '设置 · Settings', href: '/settings' },
-];
+function buildNavItems(t: T): SideNavigationProps.Item[] {
+  return [
+    { type: 'link', text: t('nav.dashboard'), href: '/' },
+    {
+      type: 'section-group',
+      title: t('nav.group.models'),
+      items: [
+        {
+          type: 'section',
+          text: t('nav.algorithms'),
+          defaultExpanded: true,
+          items: [
+            { type: 'link', text: t('nav.registry'), href: '/algorithms' },
+            { type: 'link', text: t('nav.coverage'), href: '/algorithms/coverage' },
+          ],
+        },
+        {
+          type: 'section',
+          text: t('nav.expModels'),
+          defaultExpanded: true,
+          items: [
+            { type: 'link', text: t('nav.experiments'), href: '/experiments' },
+            { type: 'link', text: t('nav.models'), href: '/models' },
+          ],
+        },
+        { type: 'link', text: t('nav.automl'), href: '/automl' },
+      ],
+    },
+    {
+      type: 'section-group',
+      title: t('nav.group.operations'),
+      items: [
+        {
+          type: 'section',
+          text: t('nav.workflows'),
+          defaultExpanded: true,
+          items: [
+            { type: 'link', text: t('nav.executions'), href: '/workflows' },
+            { type: 'link', text: t('nav.pipelineEditor'), href: '/pipelines/editor' },
+          ],
+        },
+        {
+          type: 'section',
+          text: t('nav.monitoring'),
+          defaultExpanded: true,
+          items: [
+            { type: 'link', text: t('nav.overview'), href: '/monitoring' },
+            { type: 'link', text: t('nav.drift'), href: '/monitoring/drift' },
+            { type: 'link', text: t('nav.grafana'), href: '/monitoring/grafana' },
+          ],
+        },
+        { type: 'link', text: t('nav.backtesting'), href: '/backtesting' },
+      ],
+    },
+    { type: 'divider' },
+    { type: 'link', text: t('nav.settings'), href: '/settings' },
+  ];
+}
 
-const breadcrumbMap: Record<string, BreadcrumbGroupProps.Item[]> = {
-  '/': [{ text: 'Home', href: '/' }],
-  '/algorithms': [{ text: 'Home', href: '/' }, { text: 'Algorithms', href: '/algorithms' }],
-  '/algorithms/coverage': [
-    { text: 'Home', href: '/' },
-    { text: 'Algorithms', href: '/algorithms' },
-    { text: 'Coverage Map', href: '/algorithms/coverage' },
-  ],
-  '/workflows': [{ text: 'Home', href: '/' }, { text: 'Workflows', href: '/workflows' }],
-  '/pipelines/editor': [
-    { text: 'Home', href: '/' },
-    { text: 'Workflows', href: '/workflows' },
-    { text: 'Pipeline Editor', href: '/pipelines/editor' },
-  ],
-  '/monitoring': [{ text: 'Home', href: '/' }, { text: 'Monitoring', href: '/monitoring' }],
-  '/monitoring/drift': [
-    { text: 'Home', href: '/' },
-    { text: 'Monitoring', href: '/monitoring' },
-    { text: 'Drift Report', href: '/monitoring/drift' },
-  ],
-  '/monitoring/grafana': [
-    { text: 'Home', href: '/' },
-    { text: 'Monitoring', href: '/monitoring' },
-    { text: 'Grafana', href: '/monitoring/grafana' },
-  ],
-  '/experiments': [{ text: 'Home', href: '/' }, { text: 'Experiments (MLflow)', href: '/experiments' }],
-  '/models': [{ text: 'Home', href: '/' }, { text: 'Models (MLflow)', href: '/models' }],
-  '/backtesting': [{ text: 'Home', href: '/' }, { text: 'Backtesting', href: '/backtesting' }],
-  '/settings': [{ text: 'Home', href: '/' }, { text: '设置 · Settings', href: '/settings' }],
-};
+function buildBreadcrumbs(t: T): Record<string, BreadcrumbGroupProps.Item[]> {
+  const home = { text: t('crumb.home'), href: '/' };
+  return {
+    '/': [home],
+    '/algorithms': [home, { text: t('nav.algorithms'), href: '/algorithms' }],
+    '/algorithms/coverage': [home, { text: t('nav.algorithms'), href: '/algorithms' }, { text: t('nav.coverage'), href: '/algorithms/coverage' }],
+    '/workflows': [home, { text: t('nav.workflows'), href: '/workflows' }],
+    '/pipelines/editor': [home, { text: t('nav.workflows'), href: '/workflows' }, { text: t('nav.pipelineEditor'), href: '/pipelines/editor' }],
+    '/monitoring': [home, { text: t('nav.monitoring'), href: '/monitoring' }],
+    '/monitoring/drift': [home, { text: t('nav.monitoring'), href: '/monitoring' }, { text: t('nav.drift'), href: '/monitoring/drift' }],
+    '/monitoring/grafana': [home, { text: t('nav.monitoring'), href: '/monitoring' }, { text: t('nav.grafana'), href: '/monitoring/grafana' }],
+    '/experiments': [home, { text: t('nav.experiments'), href: '/experiments' }],
+    '/models': [home, { text: t('nav.models'), href: '/models' }],
+    '/automl': [home, { text: t('nav.automl'), href: '/automl' }],
+    '/backtesting': [home, { text: t('nav.backtesting'), href: '/backtesting' }],
+    '/settings': [home, { text: t('nav.settings'), href: '/settings' }],
+  };
+}
 
 const MainLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isDark, toggle } = useTheme();
+  const { lang, setLang, t } = useLang();
+
+  const navItems = useMemo(() => buildNavItems(t), [t]);
+  const breadcrumbMap = useMemo(() => buildBreadcrumbs(t), [t]);
 
   const breadcrumbs = breadcrumbMap[location.pathname] || [
-    { text: 'Home', href: '/' },
-    { text: 'Page', href: location.pathname },
+    { text: t('crumb.home'), href: '/' },
+    { text: location.pathname, href: location.pathname },
   ];
 
   return (
@@ -117,28 +110,39 @@ const MainLayout: React.FC = () => {
       <TopNavigation
         identity={{
           href: '/',
-          title: '金风天润算法平台',
+          title: t('app.title'),
         }}
         utilities={[
           {
+            type: 'menu-dropdown',
+            text: lang === 'zh' ? '中文' : 'English',
+            title: t('top.language'),
+            ariaLabel: t('top.language'),
+            items: [
+              { id: 'zh', text: '中文' },
+              { id: 'en', text: 'English' },
+            ],
+            onItemClick: ({ detail }) => setLang(detail.id === 'en' ? 'en' : 'zh'),
+          },
+          {
             type: 'button',
-            text: isDark ? '☀️ 白天' : '🌙 黑夜',
-            title: '切换主题（白天 / 黑夜）',
+            text: isDark ? `☀️ ${t('top.theme.toLight')}` : `🌙 ${t('top.theme.toDark')}`,
+            title: t('top.theme.tip'),
             ariaLabel: 'Toggle theme',
             onClick: toggle,
           },
           {
             type: 'button',
             iconName: 'settings',
-            title: 'Settings',
-            ariaLabel: 'Settings',
+            title: t('top.settings'),
+            ariaLabel: t('top.settings'),
             onClick: () => navigate('/settings'),
           },
           {
             type: 'button',
             iconName: 'user-profile',
-            title: 'Profile',
-            ariaLabel: 'Profile',
+            title: t('top.profile'),
+            ariaLabel: t('top.profile'),
           },
         ]}
       />
@@ -147,7 +151,6 @@ const MainLayout: React.FC = () => {
         navigation={
           <SideNavigation
             activeHref={location.pathname}
-            header={navHeader}
             items={navItems}
             onFollow={(event) => {
               if (!event.detail.external) {

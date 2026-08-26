@@ -9,6 +9,7 @@ import {
 import { listExecutions, getExecution, approveStep, startExecution } from './handlers/workflows';
 import { getPipelineGraph, updatePipelineGraph } from './handlers/pipelines';
 import { getLlmSettings, putLlmSettings } from './handlers/settings';
+import { startAutoml, getAutoml, listAutoml } from './handlers/automl';
 import {
   getMetrics,
   getDriftReport,
@@ -80,6 +81,25 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         if (httpMethod === 'POST') {
           const execId = pathParameters?.id || '';
           result = await approveStep(execId, parsedBody);
+        } else {
+          result = { statusCode: 405, body: JSON.stringify({ message: 'Method not allowed' }) };
+        }
+        break;
+
+      // AutoML (MLZero): POST trigger job, GET list, GET /{id} status+results
+      case '/automl':
+        if (httpMethod === 'GET') {
+          result = await listAutoml();
+        } else if (httpMethod === 'POST') {
+          result = await startAutoml(parsedBody);
+        } else {
+          result = { statusCode: 405, body: JSON.stringify({ message: 'Method not allowed' }) };
+        }
+        break;
+
+      case '/automl/{id}':
+        if (httpMethod === 'GET') {
+          result = await getAutoml(pathParameters?.id || '');
         } else {
           result = { statusCode: 405, body: JSON.stringify({ message: 'Method not allowed' }) };
         }

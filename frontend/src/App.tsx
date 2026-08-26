@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './theme/ThemeContext';
+import { LanguageProvider } from './i18n';
 import MainLayout from './layouts/AppLayout';
 import Dashboard from './pages/Dashboard';
 import AlgorithmList from './pages/Algorithms/AlgorithmList';
@@ -16,10 +17,12 @@ import MlflowPage from './pages/Embedded/MlflowPage';
 import MlflowModelsPage from './pages/Embedded/MlflowModelsPage';
 import PipelineEditor from './pages/Pipelines/PipelineEditor';
 import SettingsPage from './pages/Settings/SettingsPage';
+import AutoMlPage from './pages/AutoML/AutoMlPage';
 
 function App() {
   return (
     <ThemeProvider>
+      <LanguageProvider>
       <BrowserRouter>
         <Routes>
           <Route element={<MainLayout />}>
@@ -36,10 +39,12 @@ function App() {
           <Route path="/experiments" element={<MlflowPage />} />
           <Route path="/models" element={<MlflowModelsPage />} />
           <Route path="/backtesting" element={<BacktestingPage />} />
+          <Route path="/automl" element={<AutoMlPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

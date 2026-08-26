@@ -13,6 +13,7 @@ import Badge from '@cloudscape-design/components/badge';
 import Alert from '@cloudscape-design/components/alert';
 import Flashbar, { FlashbarProps } from '@cloudscape-design/components/flashbar';
 import { getLlmSettings, saveLlmSettings } from '../../api/settings';
+import { useLang } from '../../i18n';
 
 const PROVIDERS = [
   { label: 'OpenAI 兼容 (openai)', value: 'openai' },
@@ -22,6 +23,7 @@ const PROVIDERS = [
 ];
 
 const SettingsPage: React.FC = () => {
+  const { t } = useLang();
   const [endpointUrl, setEndpointUrl] = useState('');
   const [modelId, setModelId] = useState('');
   const [provider, setProvider] = useState('openai');
@@ -76,8 +78,8 @@ const SettingsPage: React.FC = () => {
     <ContentLayout
       headerVariant="high-contrast"
       header={
-        <Header variant="h1" description="全局大模型配置：供 AutoML 助手 (MLZero) 等使用。OpenAI 兼容端点 → Endpoint URL 映射为 proxy_url。">
-          设置 · Settings
+        <Header variant="h1" description={t('page.settings.desc')}>
+          {t('page.settings.title')}
         </Header>
       }
     >
@@ -90,8 +92,8 @@ const SettingsPage: React.FC = () => {
         <Form
           actions={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={load} disabled={loading || saving}>重置</Button>
-              <Button variant="primary" onClick={onSave} loading={saving} disabled={loading}>保存</Button>
+              <Button onClick={load} disabled={loading || saving}>{t('btn.reset')}</Button>
+              <Button variant="primary" onClick={onSave} loading={saving} disabled={loading}>{t('btn.save')}</Button>
             </SpaceBetween>
           }
         >

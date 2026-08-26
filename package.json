@@ -1,7 +1,7 @@
 {
   "name": "algo-platform",
   "version": "1.0.0",
-  "description": "金风天润算法平台 - Algorithm Platform",
+  "description": "算法运营平台 - Algorithm Ops Platform",
   "private": true,
   "workspaces": [
     "infrastructure",

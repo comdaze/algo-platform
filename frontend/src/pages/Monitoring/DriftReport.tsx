@@ -9,8 +9,10 @@ import Table from '@cloudscape-design/components/table';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import Alert from '@cloudscape-design/components/alert';
 import { getDriftReport, type DriftReportView } from '../../api/monitoring';
+import { useLang } from '../../i18n';
 
 const DriftReportPage: React.FC = () => {
+  const { t } = useLang();
   const [report, setReport] = useState<DriftReportView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,8 +39,8 @@ const DriftReportPage: React.FC = () => {
     <ContentLayout
       headerVariant="high-contrast"
       header={
-        <Header variant="h1" description={report?.timestamp ? `As of ${report.timestamp}` : 'Evidently data-drift report'}>
-          Drift Report
+        <Header variant="h1" description={report?.timestamp ? `As of ${report.timestamp}` : t('page.drift.desc')}>
+          {t('page.drift.title')}
         </Header>
       }
     >

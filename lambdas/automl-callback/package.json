@@ -1,0 +1,6 @@
+{
+  "name": "automl-callback",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EventBridge callback: write AutoML processing-job status/metrics back to DynamoDB"
+}

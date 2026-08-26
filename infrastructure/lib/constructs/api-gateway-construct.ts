@@ -3,6 +3,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
@@ -16,6 +17,12 @@ export interface ApiGatewayConstructProps {
   readonly sageMakerExecutionRole: iam.IRole;
   readonly backtestStateMachineArn: string;
   readonly rollbackFunctionArn: string;
+  readonly automlImageUri: string;
+  readonly automlProcessingRoleArn: string;
+  readonly automlRunsTable: dynamodb.ITable;
+  readonly automlJobSecurityGroupId: string;
+  readonly automlDataBucket: s3.IBucket;
+  readonly mlflowHost: string;
 }
 
 export class ApiGatewayConstruct extends Construct {
@@ -52,6 +59,14 @@ export class ApiGatewayConstruct extends Construct {
         PIPELINE_NAME: 'AlgoWindPowerPipeline',
         SAGEMAKER_PIPELINE_ROLE_ARN: props.sageMakerExecutionRole.roleArn,
         LLM_SECRET_ARN: llmSecret.secretArn,
+        AUTOML_IMAGE_URI: props.automlImageUri,
+        AUTOML_PROCESSING_ROLE_ARN: props.automlProcessingRoleArn,
+        AUTOML_RUNS_TABLE: props.automlRunsTable.tableName,
+        AUTOML_JOB_SG: props.automlJobSecurityGroupId,
+        AUTOML_JOB_SUBNETS: props.vpc.privateSubnets.map((s) => s.subnetId).join(','),
+        AUTOML_DATA_BUCKET: props.automlDataBucket.bucketName,
+        AUTOML_DEFAULT_INSTANCE: 'ml.g5.xlarge',
+        AUTOML_MLFLOW_TRACKING_URI: `http://${props.mlflowHost}`,
         ROLLBACK_FUNCTION_NAME: cdk.Fn.select(
           6,
           cdk.Fn.split(':', props.rollbackFunctionArn)
@@ -69,6 +84,31 @@ export class ApiGatewayConstruct extends Construct {
     // IAM Permissions: read/write the LLM config secret (GET/PUT /settings/llm)
     llmSecret.grantRead(apiHandler);
     llmSecret.grantWrite(apiHandler);
+
+    // IAM Permissions: AutoML (MLZero) — trigger/describe SageMaker Processing jobs,
+    // pass the scoped processing role, track runs, read job outputs.
+    props.automlRunsTable.grantReadWriteData(apiHandler);
+    props.automlDataBucket.grantReadWrite(apiHandler);
+    apiHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          'sagemaker:CreateProcessingJob',
+          'sagemaker:DescribeProcessingJob',
+          'sagemaker:ListProcessingJobs',
+          'sagemaker:AddTags',
+        ],
+        resources: ['*'],
+      })
+    );
+    apiHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['iam:PassRole'],
+        resources: [props.automlProcessingRoleArn],
+        conditions: { StringEquals: { 'iam:PassedToService': 'sagemaker.amazonaws.com' } },
+      })
+    );
 
     // IAM Permissions: SageMaker describe/list pipelines and executions
     apiHandler.addToRolePolicy(
@@ -222,6 +262,13 @@ export class ApiGatewayConstruct extends Construct {
     const settingsLlm = settings.addResource('llm');
     settingsLlm.addMethod('GET', lambdaIntegration);
     settingsLlm.addMethod('PUT', lambdaIntegration);
+
+    // /automl: GET (list runs) + POST (trigger a run); /automl/{id}: GET (status+results)
+    const automl = api.root.addResource('automl');
+    automl.addMethod('GET', lambdaIntegration);
+    automl.addMethod('POST', lambdaIntegration);
+    const automlById = automl.addResource('{id}');
+    automlById.addMethod('GET', lambdaIntegration);
 
     // /monitoring: parent resource
     const monitoring = api.root.addResource('monitoring');

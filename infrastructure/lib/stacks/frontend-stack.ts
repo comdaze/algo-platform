@@ -3,6 +3,7 @@ import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import { FrontendServiceConstruct } from '../constructs/frontend-service-construct';
 import { ApiGatewayConstruct } from '../constructs/api-gateway-construct';
 
@@ -15,6 +16,11 @@ export interface FrontendStackProps extends StackProps {
   readonly rollbackFunctionArn: string;
   readonly grafanaHost: string;
   readonly mlflowHost: string;
+  readonly automlImageUri: string;
+  readonly automlProcessingRoleArn: string;
+  readonly automlRunsTable: dynamodb.ITable;
+  readonly automlJobSecurityGroupId: string;
+  readonly automlDataBucket: s3.IBucket;
 }
 
 export class FrontendStack extends Stack {
@@ -28,6 +34,12 @@ export class FrontendStack extends Stack {
       sageMakerExecutionRole: props.sageMakerExecutionRole,
       backtestStateMachineArn: props.backtestStateMachineArn,
       rollbackFunctionArn: props.rollbackFunctionArn,
+      automlImageUri: props.automlImageUri,
+      automlProcessingRoleArn: props.automlProcessingRoleArn,
+      automlRunsTable: props.automlRunsTable,
+      automlJobSecurityGroupId: props.automlJobSecurityGroupId,
+      automlDataBucket: props.automlDataBucket,
+      mlflowHost: props.mlflowHost,
     });
 
     const frontendService = new FrontendServiceConstruct(this, 'FrontendService', {

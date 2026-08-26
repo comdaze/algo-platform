@@ -16,6 +16,7 @@ import type { EChartsOption } from 'echarts';
 import type { Algorithm } from '../../types';
 import { listAlgorithms } from '../../api/algorithms';
 import { listExecutions, type WorkflowExecution } from '../../api/workflows';
+import { useLang } from '../../i18n';
 
 // Illustrative only — there is no backend time-series metrics source yet.
 const mapeTrendData = Array.from({ length: 30 }, (_, i) => {
@@ -37,6 +38,7 @@ const isSolar = (v: string) => /solar|pv|光|太阳/i.test(v || '');
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLang();
   const [algorithms, setAlgorithms] = useState<Algorithm[]>([]);
   const [executions, setExecutions] = useState<WorkflowExecution[]>([]);
   const [loading, setLoading] = useState(false);
@@ -87,19 +89,19 @@ const Dashboard: React.FC = () => {
       header={
         <Header
           variant="h1"
-          description="Monitor wind & solar power-forecasting model performance, pipeline executions, and system health at a glance."
+          description={t('page.dashboard.desc')}
           actions={
             <SpaceBetween direction="horizontal" size="xs">
               <Button iconName="refresh" loading={loading} onClick={reload}>
-                Refresh
+                {t('btn.refresh')}
               </Button>
               <Button variant="primary" onClick={() => navigate('/algorithms')}>
-                View algorithms
+                {t('btn.viewAlgorithms')}
               </Button>
             </SpaceBetween>
           }
         >
-          算法平台 · Algorithm Platform
+          {t('nav.dashboard')}
         </Header>
       }
     >
@@ -185,8 +187,8 @@ const Dashboard: React.FC = () => {
 
         <Container
           header={
-            <Header variant="h2" description="Illustrative — no backend time-series metrics source yet">
-              MAPE Trend (Last 30 Days)
+            <Header variant="h2" description={t('dash.mapeTrend.desc')}>
+              {t('dash.mapeTrend')}
             </Header>
           }
         >
@@ -214,15 +216,15 @@ const Dashboard: React.FC = () => {
               variant="h2"
               counter={executions.length ? `(${executions.length})` : undefined}
               actions={
-                <Button onClick={() => navigate('/workflows')}>View all</Button>
+                <Button onClick={() => navigate('/workflows')}>{t('btn.viewAll')}</Button>
               }
             >
-              Recent Pipeline Executions
+              {t('dash.recentExecutions')}
             </Header>
           }
           empty={
             <Box textAlign="center" padding="m" color="text-body-secondary">
-              No recent executions
+              {t('dash.noExecutions')}
             </Box>
           }
         />

@@ -13,6 +13,7 @@ import Alert from '@cloudscape-design/components/alert';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import { listAlgorithms } from '../../api/algorithms';
 import { triggerBacktest, getBacktestResult, type BacktestStatus } from '../../api/monitoring';
+import { useLang } from '../../i18n';
 
 const sfnStatusMap: Record<string, 'success' | 'error' | 'in-progress' | 'stopped' | 'pending'> = {
   SUCCEEDED: 'success',
@@ -23,6 +24,7 @@ const sfnStatusMap: Record<string, 'success' | 'error' | 'in-progress' | 'stoppe
 };
 
 const BacktestingPage: React.FC = () => {
+  const { t } = useLang();
   const [algoOptions, setAlgoOptions] = useState<SelectProps.Option[]>([]);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<SelectProps.Option | null>(null);
   const [modelVersion, setModelVersion] = useState('latest');
@@ -86,9 +88,9 @@ const BacktestingPage: React.FC = () => {
       header={
         <Header
           variant="h1"
-          description="Run historical simulations to evaluate forecast accuracy against actual generation data."
+          description={t('page.backtesting.desc')}
         >
-          Backtesting
+          {t('page.backtesting.title')}
         </Header>
       }
     >
@@ -102,7 +104,7 @@ const BacktestingPage: React.FC = () => {
         <Form
           actions={
             <Button variant="primary" onClick={handleRun} loading={running} disabled={!selectedAlgorithm}>
-              Run Backtest
+              {t('btn.runBacktest')}
             </Button>
           }
         >

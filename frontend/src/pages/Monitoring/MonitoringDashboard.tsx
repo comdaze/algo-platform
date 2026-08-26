@@ -8,6 +8,7 @@ import SegmentedControl from '@cloudscape-design/components/segmented-control';
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
 import { getDriftReport } from '../../api/monitoring';
+import { useLang } from '../../i18n';
 
 // Illustrative only — there is no backend per-province time-series source yet.
 const provinces = ['Heilongjiang', 'Xinjiang', 'Inner Mongolia', 'Ningxia'];
@@ -19,6 +20,7 @@ const generateTimeSeries = (days: number) =>
   });
 
 const MonitoringDashboard: React.FC = () => {
+  const { t } = useLang();
   const [timeRange, setTimeRange] = useState('30d');
   const [driftScore, setDriftScore] = useState<number>(0);
 
@@ -80,7 +82,7 @@ const MonitoringDashboard: React.FC = () => {
       header={
         <Header
           variant="h1"
-          description="Model accuracy and data-drift health across deployed wind & solar forecasting models."
+          description={t('page.monitoring.desc')}
           actions={
             <SpaceBetween direction="horizontal" size="xs">
               <SegmentedControl
@@ -96,7 +98,7 @@ const MonitoringDashboard: React.FC = () => {
             </SpaceBetween>
           }
         >
-          Monitoring
+          {t('page.monitoring.title')}
         </Header>
       }
     >

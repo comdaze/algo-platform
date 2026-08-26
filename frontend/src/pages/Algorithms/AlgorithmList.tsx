@@ -15,6 +15,7 @@ import Select from '@cloudscape-design/components/select';
 import StatusBadge from '../../components/StatusBadge';
 import type { Algorithm } from '../../types';
 import { listAlgorithms, createAlgorithm, deleteAlgorithm } from '../../api/algorithms';
+import { useLang } from '../../i18n';
 
 const VARIETY_OPTIONS = [
   { label: 'Wind', value: 'Wind' },
@@ -29,6 +30,7 @@ const STATUS_OPTIONS = [
 
 const AlgorithmList: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLang();
   const [filterText, setFilterText] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [items, setItems] = useState<Algorithm[]>([]);
@@ -131,15 +133,15 @@ const AlgorithmList: React.FC = () => {
                   loading={deleting}
                   onClick={handleDelete}
                 >
-                  Delete
+                  {t('btn.delete')}
                 </Button>
                 <Button variant="primary" onClick={() => setShowCreate(true)}>
-                  Create Algorithm
+                  {t('btn.createAlgorithm')}
                 </Button>
               </SpaceBetween>
             }
           >
-            Algorithms
+            {t('page.algorithms.title')}
           </Header>
         }
         columnDefinitions={[

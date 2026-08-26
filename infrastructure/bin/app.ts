@@ -8,6 +8,7 @@ import { PipelineStack } from '../lib/stacks/pipeline-stack';
 import { WorkflowStack } from '../lib/stacks/workflow-stack';
 import { MonitoringStack } from '../lib/stacks/monitoring-stack';
 import { FrontendStack } from '../lib/stacks/frontend-stack';
+import { AutoMlStack } from '../lib/stacks/automl-stack';
 
 const app = new cdk.App();
 
@@ -57,6 +58,14 @@ const monitoringStack = new MonitoringStack(app, 'MonitoringStack', {
 monitoringStack.addDependency(foundationStack);
 monitoringStack.addDependency(dataPlatformStack);
 
+const autoMlStack = new AutoMlStack(app, 'AutoMlStack', {
+  env,
+  vpc: foundationStack.vpc,
+  dataBucket: dataPlatformStack.dataBucket,
+});
+autoMlStack.addDependency(foundationStack);
+autoMlStack.addDependency(dataPlatformStack);
+
 const frontendStack = new FrontendStack(app, 'FrontendStack', {
   env,
   vpc: foundationStack.vpc,
@@ -67,6 +76,11 @@ const frontendStack = new FrontendStack(app, 'FrontendStack', {
   rollbackFunctionArn: workflowStack.rollbackFunctionArn,
   grafanaHost: monitoringStack.grafanaHost,
   mlflowHost: mlflowStack.mlflowHost,
+  automlImageUri: autoMlStack.imageUri,
+  automlProcessingRoleArn: autoMlStack.processingRole.roleArn,
+  automlRunsTable: autoMlStack.runsTable,
+  automlJobSecurityGroupId: autoMlStack.jobSecurityGroupId,
+  automlDataBucket: dataPlatformStack.dataBucket,
 });
 frontendStack.addDependency(foundationStack);
 frontendStack.addDependency(metadataStack);
@@ -74,5 +88,6 @@ frontendStack.addDependency(dataPlatformStack);
 frontendStack.addDependency(workflowStack);
 frontendStack.addDependency(monitoringStack);
 frontendStack.addDependency(mlflowStack);
+frontendStack.addDependency(autoMlStack);
 
 app.synth();

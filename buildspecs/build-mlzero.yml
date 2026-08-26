@@ -1,0 +1,23 @@
+version: 0.2
+
+# Build the MLZero (AutoGluon Assistant) BYOC image and push to ECR (algo-mlzero).
+# Run on the privileged deployer project AFTER the CDK deploy has created the repo.
+#   aws codebuild start-build --project-name algo-platform-deployer \
+#     --buildspec-override buildspecs/build-mlzero.yml --region cn-northwest-1 --profile bjs
+phases:
+  pre_build:
+    commands:
+      - ACCOUNT=456370280007
+      - REGION=cn-northwest-1
+      - REGISTRY=$ACCOUNT.dkr.ecr.$REGION.amazonaws.com.cn
+      - REPO=$REGISTRY/algo-mlzero
+      - echo "Logging in to ECR $REGISTRY"
+      - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $REGISTRY
+  build:
+    commands:
+      - echo "Building MLZero image (autogluon deps are large; this takes a while)"
+      - docker build -t $REPO:latest containers/mlzero
+  post_build:
+    commands:
+      - docker push $REPO:latest
+      - echo "Pushed $REPO:latest"
