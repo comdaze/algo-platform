@@ -15,6 +15,7 @@ import GrafanaPage from './pages/Embedded/GrafanaPage';
 import MlflowPage from './pages/Embedded/MlflowPage';
 import MlflowModelsPage from './pages/Embedded/MlflowModelsPage';
 import PipelineEditor from './pages/Pipelines/PipelineEditor';
+import SettingsPage from './pages/Settings/SettingsPage';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
           <Route path="/experiments" element={<MlflowPage />} />
           <Route path="/models" element={<MlflowModelsPage />} />
           <Route path="/backtesting" element={<BacktestingPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

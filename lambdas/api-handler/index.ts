@@ -8,6 +8,7 @@ import {
 } from './handlers/algorithms';
 import { listExecutions, getExecution, approveStep, startExecution } from './handlers/workflows';
 import { getPipelineGraph, updatePipelineGraph } from './handlers/pipelines';
+import { getLlmSettings, putLlmSettings } from './handlers/settings';
 import {
   getMetrics,
   getDriftReport,
@@ -79,6 +80,17 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         if (httpMethod === 'POST') {
           const execId = pathParameters?.id || '';
           result = await approveStep(execId, parsedBody);
+        } else {
+          result = { statusCode: 405, body: JSON.stringify({ message: 'Method not allowed' }) };
+        }
+        break;
+
+      // Settings (global LLM config for MLZero / OpenAI-compatible endpoints)
+      case '/settings/llm':
+        if (httpMethod === 'GET') {
+          result = await getLlmSettings();
+        } else if (httpMethod === 'PUT') {
+          result = await putLlmSettings(parsedBody);
         } else {
           result = { statusCode: 405, body: JSON.stringify({ message: 'Method not allowed' }) };
         }

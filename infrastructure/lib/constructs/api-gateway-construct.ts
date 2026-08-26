@@ -6,6 +6,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as path from 'path';
 
 export interface ApiGatewayConstructProps {
@@ -26,6 +27,16 @@ export class ApiGatewayConstruct extends Construct {
 
     const stack = cdk.Stack.of(this);
 
+    // Global LLM config for MLZero / OpenAI-compatible endpoints. A single JSON
+    // secret { endpointUrl, modelId, provider, apiKey }; the API reads/writes it.
+    // Placeholder value on create; real values set via PUT /settings/llm.
+    const llmSecret = new secretsmanager.Secret(this, 'LlmConfig', {
+      secretName: 'algo/llm/config',
+      secretStringValue: cdk.SecretValue.unsafePlainText(
+        JSON.stringify({ endpointUrl: '', modelId: '', provider: 'openai', apiKey: '' })
+      ),
+    });
+
     // Single Lambda handler using NodejsFunction with esbuild bundling
     const apiHandler = new lambdaNodejs.NodejsFunction(this, 'ApiHandler', {
       entry: path.join(__dirname, '../../../lambdas/api-handler/index.ts'),
@@ -40,6 +51,7 @@ export class ApiGatewayConstruct extends Construct {
         BACKTEST_STATE_MACHINE_ARN: props.backtestStateMachineArn,
         PIPELINE_NAME: 'AlgoWindPowerPipeline',
         SAGEMAKER_PIPELINE_ROLE_ARN: props.sageMakerExecutionRole.roleArn,
+        LLM_SECRET_ARN: llmSecret.secretArn,
         ROLLBACK_FUNCTION_NAME: cdk.Fn.select(
           6,
           cdk.Fn.split(':', props.rollbackFunctionArn)
@@ -53,6 +65,10 @@ export class ApiGatewayConstruct extends Construct {
     // IAM Permissions: DynamoDB read/write on both tables
     props.metadataTable.grantReadWriteData(apiHandler);
     props.deploymentHistoryTable.grantReadWriteData(apiHandler);
+
+    // IAM Permissions: read/write the LLM config secret (GET/PUT /settings/llm)
+    llmSecret.grantRead(apiHandler);
+    llmSecret.grantWrite(apiHandler);
 
     // IAM Permissions: SageMaker describe/list pipelines and executions
     apiHandler.addToRolePolicy(
@@ -200,6 +216,12 @@ export class ApiGatewayConstruct extends Construct {
     const pipelines = api.root.addResource('pipelines');
     pipelines.addMethod('GET', lambdaIntegration);
     pipelines.addMethod('PUT', lambdaIntegration);
+
+    // /settings/llm: GET (masked config) + PUT (save; key kept if omitted)
+    const settings = api.root.addResource('settings');
+    const settingsLlm = settings.addResource('llm');
+    settingsLlm.addMethod('GET', lambdaIntegration);
+    settingsLlm.addMethod('PUT', lambdaIntegration);
 
     // /monitoring: parent resource
     const monitoring = api.root.addResource('monitoring');

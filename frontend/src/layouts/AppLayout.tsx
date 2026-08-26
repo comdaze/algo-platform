@@ -31,6 +31,8 @@ const navItems: SideNavigationProps.Item[] = [
   { type: 'link', text: 'Experiments (MLflow)', href: '/experiments' },
   { type: 'link', text: 'Models (MLflow)', href: '/models' },
   { type: 'link', text: 'Backtesting', href: '/backtesting' },
+  { type: 'divider' },
+  { type: 'link', text: '设置 · Settings', href: '/settings' },
 ];
 
 const breadcrumbMap: Record<string, BreadcrumbGroupProps.Item[]> = {
@@ -43,6 +45,7 @@ const breadcrumbMap: Record<string, BreadcrumbGroupProps.Item[]> = {
   '/experiments': [{ text: 'Home', href: '/' }, { text: 'Experiments (MLflow)', href: '/experiments' }],
   '/models': [{ text: 'Home', href: '/' }, { text: 'Models (MLflow)', href: '/models' }],
   '/backtesting': [{ text: 'Home', href: '/' }, { text: 'Backtesting', href: '/backtesting' }],
+  '/settings': [{ text: 'Home', href: '/' }, { text: '设置 · Settings', href: '/settings' }],
 };
 
 const MainLayout: React.FC = () => {
@@ -69,6 +72,13 @@ const MainLayout: React.FC = () => {
             title: '切换主题（白天 / 黑夜）',
             ariaLabel: 'Toggle theme',
             onClick: toggle,
+          },
+          {
+            type: 'button',
+            iconName: 'settings',
+            title: 'Settings',
+            ariaLabel: 'Settings',
+            onClick: () => navigate('/settings'),
           },
           {
             type: 'button',

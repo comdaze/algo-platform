@@ -1,0 +1,51 @@
+# MLZero custom config for a China-region OpenAI-COMPATIBLE endpoint.
+# Based on autogluon-assistant's src/.../configs/openai.yaml.
+# openai_chat.py sets: openai_api_base = config.proxy_url ; reads OPENAI_API_KEY from env.
+# So: Endpoint URL -> proxy_url ; Model ID -> model ; API Key -> $OPENAI_API_KEY.
+#
+# __PROXY_URL__ and __MODEL_ID__ are replaced by run.sh from env vars.
+
+per_execution_timeout: 86400
+
+max_file_group_size_to_show: 5
+num_example_files_to_show: 1
+max_chars_per_file: 768
+num_tutorial_retrievals: 30
+max_num_tutorials: 5
+max_user_input_length: 2048
+max_error_message_length: 2048
+max_tutorial_length: 32768
+configure_env: false
+condense_tutorials: True
+use_tutorial_summary: True
+continuous_improvement: False
+optimize_system_resources: False
+cleanup_unused_env: True
+enable_meta_prompting: False
+
+llm: &default_llm
+  provider: openai
+  model: __MODEL_ID__
+  proxy_url: __PROXY_URL__      # OpenAI-compatible base_url, e.g. https://dashscope.aliyuncs.com/compatible-mode/v1
+  max_tokens: 32768
+  temperature: 0.1
+  top_p: 0.9
+  verbose: True
+  multi_turn: False
+  template: null
+  add_coding_format_instruction: false
+  apply_meta_prompting: False
+
+python_coder:
+  <<: *default_llm
+  multi_turn: True
+  apply_meta_prompting: True
+
+bash_coder:
+  <<: *default_llm
+  multi_turn: True
+
+executer:
+  <<: *default_llm
+  max_stdout_length: 8192
+  max_stderr_length: 2048
